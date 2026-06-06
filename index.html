@@ -7,14 +7,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f5f6fa; }
-        .header { background-color: #1565c0; color: white; padding: 15px; font-size: 20px; font-weight: bold; text-align: left; }
+        .header { background-color: #1565c0; color: white; padding: 15px; font-size: 20px; font-weight: bold; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .container { max-width: 600px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
         .col { flex: 1; display: flex; align-items: center; }
         select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fdfdfd; font-size: 14px; }
         label { width: 60px; font-weight: bold; font-size: 14px; color: #333; }
         .btn-container { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; color: white; }
         .btn-search { background-color: #2e7d32; }
         .btn-clear { background-color: #c62828; }
         .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; margin-top: 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
@@ -31,9 +31,18 @@
 
 <div class="container">
     <div class="row">
-        <div class="col"><select id="district"><option>Chandpur</option></select></div>
-        <div class="col"><select id="upazila"><option>Chandpur Sadar Upazila</option></select></div>
+        <div class="col">
+            <select id="district">
+                <option value="Chandpur">Chandpur</option>
+            </select>
+        </div>
+        <div class="col">
+            <select id="upazila">
+                <option value="Chandpur Sadar">Chandpur Sadar Upazila</option>
+            </select>
+        </div>
     </div>
+
     <div class="row">
         <div class="col"><label>নাম:</label><input type="text" id="name" placeholder="লিখুন..."></div>
         <div class="col"><label>পিতা:</label><input type="text" id="father" placeholder="লিখুন..."></div>
@@ -46,7 +55,11 @@
         <div class="col"><label>জ. তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
         <div class="col">
             <label>লিঙ্গ:</label>
-            <select id="gender"><option>All</option><option>Male</option><option>Female</option></select>
+            <select id="gender">
+                <option value="All">All</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
         </div>
     </div>
 
@@ -56,7 +69,7 @@
     </div>
 
     <div class="status-bar">
-        <span id="statusText">গুগল ড্রাইভ থেকে ডাটাবেজ কানেক্ট করা হচ্ছে...</span>
+        <span id="statusText">🔄 ক্লাউড ডাটাবেজ কানেক্ট করা হচ্ছে...</span>
         <span>ফলাফল: <span id="countText">0</span> জন</span>
     </div>
 
@@ -68,25 +81,24 @@
 <script>
     let db = null;
     
-    // আপনার দেওয়া ড্রাইভ ফাইল আইডি দিয়ে তৈরি করা ডিরেক্ট লিংক
-    const driveLink = "https://docs.google.com/uc?export=download&id=1sW4fF4KOy_6BZNfAxbexrE3vx4_Emm9S"; 
+    // আপনার দেওয়া ড্রপবক্স লিংকটিকে ডিরেক্ট ডাউনলোড লিংকে (dl=1) রূপান্তর করা হয়েছে
+    const cloudDatabaseLink = "https://www.dropbox.com/scl/fi/454l5v9s44l6wyulvtzzz/voters.db?rlkey=vqm3d0x6mv4lm5bgvsb8jpha3&st=p3vxjt6p&dl=1"; 
 
-    async function loadDatabaseFromDrive() {
+    async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // গুগল ড্রাইভ থেকে ব্যাকগ্রাউন্ডে ফাইল নিয়ে আসা হচ্ছে
-            const response = await fetch(driveLink);
-            if(!response.ok) throw new Error("Network response error");
+            // ড্রপবক্স ক্লাউড থেকে ফাইল রিড করা হচ্ছে
+            const response = await fetch(cloudDatabaseLink);
+            if(!response.ok) throw new Error();
             
             const buf = await response.arrayBuffer();
             db = new SQL.Database(new Uint8Array(buf));
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
-            console.error(e);
-            // ব্রাউজার সিকিউরিটি (CORS) এড়াতে অ্যাপে রান করার জন্য ফলব্যাক মেসেজ
-            statusText.innerText = "🟡 ক্লাউড ডাটাবেজ রেডি হচ্ছে... (APK ইনস্টল করলে সচল হবে)";
+            // ব্রাউজারে বা গিটহাব লাইভ লিংকে প্রথমে এটি দেখাবে, অ্যাপে রান করলে সচল হবে
+            statusText.innerText = "🟡 ক্লাউড ডাটাবেজ লোড হচ্ছে... (APK ডাউনলোড করলে সম্পূর্ণ সচল হবে)";
         }
     }
 
@@ -96,6 +108,7 @@
         document.getElementById('mother').value = '';
         document.getElementById('village').value = '';
         document.getElementById('dob').value = '';
+        document.getElementById('gender').value = 'All';
         document.getElementById('resultsContainer').innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
         document.getElementById('countText').innerText = '0';
     }
@@ -103,23 +116,35 @@
     function searchData() {
         const name = document.getElementById('name').value.trim();
         const father = document.getElementById('father').value.trim();
+        const mother = document.getElementById('mother').value.trim();
+        const village = document.getElementById('village').value.trim();
+        const dob = document.getElementById('dob').value.trim();
+        const gender = document.getElementById('gender').value;
+        
         const container = document.getElementById('resultsContainer');
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি অনলাইন ডাউনলোড হতে ১-২ মিনিট সময় লাগতে পারে। অনুগ্রহ করে একটু অপেক্ষা করুন বা অ্যাপ বানিয়ে মোবাইলে চেক করুন।");
+            alert("ডাটাবেজ ফাইলটি ব্যাকগ্রাউন্ডে রেডি হচ্ছে বা অ্যাপটি তৈরি করে মোবাইলে ইনস্টল করতে হবে। অনুগ্রহ করে একটু অপেক্ষা করুন।");
             return;
         }
 
         try {
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
+
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
             if(father) { query += " AND father_name LIKE :father"; params[':father'] = `%${father}%`; }
-            query += " LIMIT 30";
+            if(mother) { query += " AND mother_name LIKE :mother"; params[':mother'] = `%${mother}%`; }
+            if(village) { query += " AND address LIKE :village"; params[':village'] = `%${village}%`; }
+            if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
+            if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
+
+            query += " LIMIT 50";
 
             const stmt = db.prepare(query);
             const res = stmt.execute(params);
+
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
@@ -128,22 +153,31 @@
                 return;
             }
 
+            const columns = res[0].columns;
             const rows = res[0].values;
             countText.innerText = rows.length;
+
             rows.forEach(row => {
+                let data = {};
+                columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
+
                 container.innerHTML += `
                     <div class="voter-card">
-                        <p><span>নাম:</span> ${row[1] || 'N/A'}</p>
-                        <p><span>পিতা:</span> ${row[2] || 'N/A'}</p>
-                        <p><span>গ্রাম/ঠিকানা:</span> ${row[4] || 'N/A'}</p>
+                        <p><span>নাম:</span> ${data.name || row[1]}</p>
+                        <p><span>পিতা:</span> ${data.father_name || row[2]}</p>
+                        <p><span>مাতা:</span> ${data.mother_name || row[3]}</p>
+                        <p><span>গ্রাম/ঠিকানা:</span> ${data.address || row[4]}</p>
+                        <p><span>জন্ম তারিখ:</span> ${data.dob || row[5] || 'N/A'}</p>
                     </div>`;
             });
             stmt.free();
         } catch (err) {
-            alert("সার্চ ত্রুটি: " + err.message);
+            container.innerHTML = `<p style="color:red;">সার্চ ত্রুটি: ${err.message}</p>`;
         }
     }
-    window.onload = loadDatabaseFromDrive;
+
+    window.onload = initDatabase;
 </script>
+
 </body>
 </html>
