@@ -3,30 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ভোটার তথ্য অনুসন্ধান</title>
+    <title>ভোটার তথ্য অনুসন্ধান প্যানেল</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
-        .container { max-width: 500px; margin: 30px auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
-        .status { text-align: center; font-weight: bold; color: #d35400; margin-bottom: 15px; }
-        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover { background-color: #219653; }
-        .results { margin-top: 25px; }
-        .voter-card { background: #f8f9fa; border-left: 5px solid #2980b9; padding: 15px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .voter-card p { margin: 6px 0; font-size: 15px; }
-        .label { font-weight: bold; color: #34495e; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f0f3f6;
+            color: #333;
+        }
+        .container {
+            max-width: 650px;
+            margin: 15px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h2 {
+            text-align: center;
+            color: #1e3799;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        .sub-title {
+            text-align: center;
+            color: #60a3bc;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .status-box {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            background: #fff8ed;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            color: #d35400;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #1e3799;
+            outline: none;
+            box-shadow: 0 0 5px rgba(30, 55, 153, 0.2);
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-search {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-search:hover { background-color: #27ae60; }
+        .btn-clear {
+            background-color: #e74c3c;
+            color: white;
+            max-width: 120px;
+        }
+        .btn-clear:hover { background-color: #c0392b; }
+        .results {
+            margin-top: 25px;
+        }
+        .voter-card {
+            background: #ffffff;
+            border: 1px solid #dcdde1;
+            border-top: 5px solid #1e3799;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .voter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .voter-grid p {
+            margin: 4px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .label {
+            font-weight: bold;
+            color: #7f8c8d;
+            display: inline-block;
+            width: 90px;
+        }
+        .val {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        .full-width {
+            grid-column: span 2;
+            border-top: 1px dashed #eee;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ভোটার তথ্য অনুসন্ধান</h2>
-    <div id="status" class="status">ডাটাবেজ লোড করার চেষ্টা করা হচ্ছে...</div>
+    <h2>ভোটার তথ্য অনুসন্ধান প্যানেল</h2>
+    <div class="sub-title">চাঁদপুর সদর ডাটাবেজ সিস্টেম</div>
     
-    <input type="text" id="searchInput" placeholder="ভোটার আইডি বা নাম লিখুন..." disabled>
-    <button id="searchBtn" onclick="searchData()" disabled>অনুসন্ধান করুন</button>
+    <div id="status" class="status-box">🔄 ইঞ্জিন প্রস্তুত হচ্ছে... অপেক্ষা করুন।</div>
+    
+    <div class="form-group">
+        <label for="searchId">ভোটার আইডি / NID নম্বর:</label>
+        <input type="text" id="searchId" placeholder="উদাঃ 199XXXXXXXXXX" disabled>
+    </div>
+
+    <div class="form-group">
+        <label for="searchName">ভোটারের নাম (বাংলা অথবা ইংরেজি):</label>
+        <input type="text" id="searchName" placeholder="উদাঃ মোঃ ফরহাদ" disabled>
+    </div>
+
+    <div class="form-group">
+        <label for="searchFather">পিতার নাম:</label>
+        <input type="text" id="searchFather" placeholder="উদাঃ আবদুর রহমান" disabled>
+    </div>
+
+    <div class="btn-container">
+        <button id="clearBtn" class="btn-clear" onclick="clearFields()" disabled>মুছে ফেলুন</button>
+        <button id="searchBtn" class="btn-search" onclick="searchData()" disabled>🔍 তথ্য অনুসন্ধান করুন</button>
+    </div>
 
     <div class="results" id="resultsContainer"></div>
 </div>
@@ -34,81 +168,128 @@
 <script>
     let db = null;
 
-    // অ্যাপটি রান হওয়ার সাথে সাথে এটি মোবাইলের লোকাল ফোল্ডার থেকে ডাটাবেজটি টানবে
+    // ডাটাবেজ এবং SQL ইঞ্জিন সচল করার ফাংশন
     async function initDatabase() {
         const statusDiv = document.getElementById('status');
         try {
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // যেহেতু এটি গিটহাবে থাকবে, আমরা আপেক্ষিক পথ ব্যবহার করছি যেন অ্যাপে কাজ করে
+            // মোবাইল জিপ অ্যাপ এবং লাইভ সার্ভার দুই জায়গার জন্যই পাথ হ্যান্ডেল করা
             const response = await fetch('assets/voters.db');
-            if (!response.ok) throw new Error("Database file not found in assets/");
+            if (!response.ok) throw new Error("Database file missing");
             
             const buf = await response.arrayBuffer();
             db = new SQL.Database(new Uint8Array(buf));
             
-            statusDiv.style.color = '#27ae60';
-            statusDiv.innerText = '🟢 ডাটাবেজ সফলভাবে সংযুক্ত হয়েছে!';
-            document.getElementById('searchInput').disabled = false;
-            document.getElementById('searchBtn').disabled = false;
+            statusDiv.style.background = '#e1f5fe';
+            statusDiv.style.borderColor = '#b3e5fc';
+            statusDiv.style.color = '#0288d1';
+            statusDiv.innerText = '🟢 সিস্টেম প্রস্তুত! তথ্য দিয়ে অনুসন্ধান করুন।';
+            enableForm(true);
         } catch (error) {
             console.error(error);
-            statusDiv.style.color = '#c0392b';
-            statusDiv.innerText = '🔴 ডাটাবেজ পাওয়া যায়নি! (অ্যাপ ইনস্টল করার পর ঠিক হয়ে যাবে)';
-            // টেস্টিং এর জন্য বাটন সচল রাখছি
-            document.getElementById('searchInput').disabled = false;
-            document.getElementById('searchBtn').disabled = false;
+            statusDiv.style.background = '#ffe9e9';
+            statusDiv.style.borderColor = '#ffcccc';
+            statusDiv.style.color = '#d63031';
+            statusDiv.innerText = '🔴 ডাটাবেজ ফাইল সংযুক্ত নেই! (মোবাইলে APK ইনস্টল করলে এটি কাজ করবে)';
+            enableForm(true); // টেস্টিং ও প্রিভিউ সচল রাখার জন্য ইনপুট ফিল্ড অন রাখা হলো
         }
     }
 
+    function enableForm(status) {
+        const state = !status;
+        document.getElementById('searchId').disabled = state;
+        document.getElementById('searchName').disabled = state;
+        document.getElementById('searchFather').disabled = state;
+        document.getElementById('searchBtn').disabled = state;
+        document.getElementById('clearBtn').disabled = state;
+    }
+
+    function clearFields() {
+        document.getElementById('searchId').value = '';
+        document.getElementById('searchName').value = '';
+        document.getElementById('searchFather').value = '';
+        document.getElementById('resultsContainer').innerHTML = '';
+    }
+
     function searchData() {
-        const query = document.getElementById('searchInput').value.trim();
+        const vId = document.getElementById('searchId').value.trim();
+        const vName = document.getElementById('searchName').value.trim();
+        const vFather = document.getElementById('searchFather').value.trim();
         const container = document.getElementById('resultsContainer');
         container.innerHTML = '';
 
-        if (!query) {
-            container.innerHTML = '<p style="color: red; text-align:center;">অনুগ্রহ করে কিছু লিখুন!</p>';
+        if (!vId && !vName && !vFather) {
+            container.innerHTML = '<p style="color: #e74c3c; text-align:center; font-weight:bold;">অনুগ্রহ করে যেকোনো একটি ঘরে তথ্য লিখুন!</p>';
             return;
         }
 
         if (!db) {
-            container.innerHTML = '<p style="color: red; text-align:center;">ডাটাবেজ এখনো প্রস্তুত নয়!</p>';
+            container.innerHTML = '<p style="color: #c0392b; text-align:center;">ডাটাবেজ ফাইলটি এখনো আপলোড বা লোড করা হয়নি।</p>';
             return;
         }
 
-        container.innerHTML = '<p style="text-align:center;">অনুসন্ধান করা হচ্ছে...</p>';
+        container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">🔍 ডাটাবেজ অনুসন্ধান করা হচ্ছে... অপেক্ষা করুন...</p>';
 
         try {
-            // আপনার ডাটাবেজের টেবিলের নাম 'voters' এবং কলাম 'id' ও 'name' ধরে করা (প্রয়োজনে পরিবর্তন করা যাবে)
-            const stmt = db.prepare("SELECT * FROM voters WHERE id = :name OR name LIKE :likeName LIMIT 50");
-            const res = stmt.execute({ ':name': query, ':likeName': '%' + query + '%' });
+            // ডাইনামিক কোয়েরি তৈরি করা ইউজার কোন বক্সে তথ্য দিয়েছে তার ওপর ভিত্তি করে
+            let queryStr = "SELECT * FROM voters WHERE 1=1";
+            let params = {};
+
+            if (vId) {
+                queryStr += " AND id = :id";
+                params[':id'] = vId;
+            }
+            if (vName) {
+                queryStr += " AND name LIKE :name";
+                params[':name'] = '%' + vName + '%';
+            }
+            if (vFather) {
+                queryStr += " AND father_name LIKE :father"; // আপনার ডাটাবেজের কলামের নাম অনুযায়ী পরিবর্তন হতে পারে
+                params[':father'] = '%' + vFather + '%';
+            }
+
+            queryStr += " LIMIT 30"; // অতিরিক্ত লোড এড়াতে সর্বোচ্চ ৩০টি রেজাল্ট দেখাবে
+
+            const stmt = db.prepare(queryStr);
+            const res = stmt.execute(params);
             
             container.innerHTML = '';
             
             if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">কোনো তথ্য পাওয়া যায়নি।</p>';
+                container.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-weight:500;">কোনো ভোটারের তথ্য মেলেনি। সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।</p>';
                 return;
             }
 
             const columns = res[0].columns;
             const rows = res[0].values;
 
+            // ডাটাগুলোকে সুন্দর গ্রিড ও আইডি কার্ডের মতো ডিজাইনে সাজানো
             rows.forEach(row => {
-                let card = '<div class="voter-card">';
-                columns.forEach((col, index) => {
-                    card += `<p><span class="label">${col}:</span> ${row[index]}</p>`;
-                });
-                card += '</div>';
+                let rowData = {};
+                columns.forEach((col, idx) => { rowData[col.toLowerCase()] = row[idx]; });
+
+                let card = `<div class="voter-card">
+                    <div class="voter-grid">
+                        <p><span class="label">নাম:</span> <span class="val">${rowData.name || row[1] || 'N/A'}</span></p>
+                        <p><span class="label">ভোটার আইডি:</span> <span class="val" style="color:#1e3799; font-weight:bold;">${rowData.id || row[0] || 'N/A'}</span></p>
+                        <p><span class="label">পিতার নাম:</span> <span class="val">${rowData.father_name || row[2] || 'N/A'}</span></p>
+                        <p><span class="label">মাতার নাম:</span> <span class="val">${rowData.mother_name || row[3] || 'N/A'}</span></p>
+                        <div class="full-width">
+                            <p><span class="label">ঠিকানা:</span> <span class="val">${rowData.address || row[4] || 'N/A'}</span></p>
+                        </div>
+                    </div>
+                </div>`;
                 container.innerHTML += card;
             });
 
             stmt.free();
         } catch (e) {
-            container.innerHTML = `<p style="color:red;">সার্চ করার সময় ত্রুটি হয়েছে: ${e.message}</p>`;
+            container.innerHTML = `<p style="color:#e74c3c;">⚠️ অনুসন্ধান ত্রুটি: আপনার ডাটাবেজের কলাম নামের সাথে কোড মেলেনি। (${e.message})</p>`;
         }
     }
 
-    // ডাটাবেজ ইনিশিয়ালের ফাংশন কল
+    // ব্যাকগ্রাউন্ডে ডাটাবেজ ইঞ্জিন চালু করা
     initDatabase();
 </script>
 
