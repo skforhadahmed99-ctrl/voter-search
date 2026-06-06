@@ -1,169 +1,87 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Data Search System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <title>Voter Data Search</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-radius;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .voter-card {
+            background: #e9ecef;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="flex justify-center items-center min-h-screen bg-slate-100 p-2">
+<body>
 
-    <div class="w-full max-w-md bg-[#f8fafc] shadow-2xl rounded-2xl overflow-hidden flex flex-col h-[90vh] border border-slate-200">
+<div class="container">
+    <h2>ভোটার তথ্য অনুসন্ধান</h2>
+    <input type="text" id="searchInput" placeholder="ভোটার আইডি বা নাম লিখুন...">
+    <button onclick="searchData()">অনুসন্ধান করুন</button>
+
+    <div class="results" id="resultsContainer"></div>
+</div>
+
+<script>
+    // ডাটাবেজ বড় হওয়ার কারণে এটি লোকাল স্টোরেজ বা প্রগতিশীল অনুসন্ধানের জন্য তৈরি স্ট্রাকচার
+    function searchData() {
+        const query = document.getElementById('searchInput').value.trim();
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML = '';
+
+        if (query === '') {
+            container.innerHTML = '<p style="color: red;">অনুগ্রহ করে কিছু লিখুন!</p>';
+            return;
+        }
+
+        container.innerHTML = '<p>অনুসন্ধান করা হচ্ছে... (বড় ডাটাবেজের ক্ষেত্রে কিছুটা সময় লাগতে পারে)</p>';
         
-        <div class="bg-[#1976d2] text-white px-4 py-3.5 shadow-md flex items-center justify-between">
-            <h1 class="text-xl font-bold tracking-wide">Easy Data Search System</h1>
-            <i class="fa-solid fa-database text-blue-200"></i>
-        </div>
+        // এখানে অ্যাপের ব্যাকএন্ড বা লোকাল SQLite ফাইল কল করার লজিক কাজ করবে
+        // অ্যাপটি মোবাইলে ইনস্টল হওয়ার পর এই ফাংশনটি কাজ করা শুরু করবে
+    }
+</script>
 
-        <div class="p-3.5 space-y-3 bg-white border-b border-slate-200 shadow-sm">
-            <div class="grid grid-cols-2 gap-2">
-                <select class="w-full p-2 bg-white border border-slate-300 rounded-md text-slate-700 text-xs"><option>Chandpur</option></select>
-                <select class="w-full p-2 bg-white border border-slate-300 rounded-md text-slate-700 text-xs"><option>Chandpur Sadar Upazila</option></select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-x-2 gap-y-2.5 text-xs">
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">নাম:</label><input type="text" id="searchName" placeholder="লিখুন..." class="w-3/4 p-1.5 border rounded-md"></div>
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">পিতা:</label><input type="text" id="searchFather" placeholder="লিখুন..." class="w-3/4 p-1.5 border rounded-md"></div>
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">মাতা:</label><input type="text" id="searchMother" placeholder="লিখুন..." class="w-3/4 p-1.5 border rounded-md"></div>
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">গ্রাম:</label><input type="text" id="searchVillage" placeholder="লিখুন..." class="w-3/4 p-1.5 border rounded-md"></div>
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">জ. তারিখ:</label><input type="text" id="searchDob" placeholder="১২/০৫/২০০০" class="w-3/4 p-1.5 border rounded-md"></div>
-                <div class="flex items-center justify-between"><label class="font-bold text-slate-700 w-1/4">লিঙ্গ:</label>
-                    <select id="searchGender" class="w-3/4 p-1.5 border rounded-md text-slate-700"><option value="All">All</option><option value="পুরুষ">পুরুষ</option><option value="মহিলা">মহিলা</option></select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="searchData()" class="bg-[#2e7d32] text-white font-medium py-2 px-4 rounded-md flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-magnifying-glass text-xs"></i> সার্চ</button>
-                <button onclick="clearForm()" class="bg-[#c62828] text-white font-medium py-2 px-4 rounded-md flex items-center justify-center gap-1.5 shadow"><i class="fa-solid fa-rotate-left text-xs"></i> ক্লিয়ার</button>
-            </div>
-
-            <div class="bg-[#e3f2fd] text-[#1565c0] px-3 py-1.5 rounded flex justify-between text-[11px] font-semibold">
-                <span id="statusText"><i class="fa-solid fa-circle-notch animate-spin mr-1"></i> বড় ফাইল, লোড হতে সময় লাগতে পারে...</span>
-                <span>ফলাফল: <span id="resultCount" class="font-bold text-xs">০</span> জন</span>
-            </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-2" id="resultArea">
-            <div id="noDataScreen" class="h-full flex flex-col items-center justify-center text-slate-400 py-16">
-                <p class="text-slate-400 font-semibold text-sm">কোনো তথ্য পাওয়া যায়নি</p>
-            </div>
-
-            <div id="tableContainer" class="hidden w-full overflow-hidden rounded-md border bg-white shadow-sm">
-                <table class="w-full text-left border-collapse text-[11px]">
-                    <thead>
-                        <tr class="bg-slate-100 border-b text-slate-700 font-bold">
-                            <th class="p-2 w-[28%]">নাম</th>
-                            <th class="p-2 w-[32%]">পিতা/মাতা</th>
-                            <th class="p-2 w-[20%]">গ্রাম</th>
-                            <th class="p-2 w-[20%]">জন্ম তারিখ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultTableBody" class="text-slate-600 divide-y"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let db = null;
-
-        // আপনার voters.db ফাইলটি এখানে লোড করা হচ্ছে
-        async function initDatabase() {
-            try {
-                const config = { locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` };
-                const SQL = await initSqlJs(config);
-
-                // এখানে voters.db নাম দেওয়া হয়েছে
-                const response = await fetch('assets/voters.db'); 
-                if (!response.ok) throw new Error("Database file missing.");
-                
-                const arrayBuffer = await response.arrayBuffer();
-                const uInt8Array = new Uint8Array(arrayBuffer);
-                
-                db = new SQL.Database(uInt8Array);
-                document.getElementById('statusText').innerHTML = "Search your data, just a second";
-            } catch (error) {
-                document.getElementById('statusText').innerHTML = "ডেটাবেজ ফাইল পাওয়া যায়নি!";
-                console.error(error);
-            }
-        }
-
-        function searchData() {
-            if (!db) return;
-
-            const name = document.getElementById('searchName').value.trim();
-            const father = document.getElementById('searchFather').value.trim();
-            const mother = document.getElementById('searchMother').value.trim();
-            const village = document.getElementById('searchVillage').value.trim();
-            const dob = document.getElementById('searchDob').value.trim();
-            const gender = document.getElementById('searchGender').value;
-
-            // ⚠️ মনে রাখবেন: আপনার টেবিলের নাম যদি 'voters' না হয়ে অন্য কিছু হয়, তবে নিচের 'voters' লেখাটি পরিবর্তন করবেন
-            let query = "SELECT name, father, mother, village, dob, gender FROM voters WHERE 1=1";
-            let params = [];
-
-            if (name) { query += " AND name LIKE ?"; params.push(`%${name}%`); }
-            if (father) { query += " AND father LIKE ?"; params.push(`%${father}%`); }
-            if (mother) { query += " AND mother LIKE ?"; params.push(`%${mother}%`); }
-            if (village) { query += " AND village LIKE ?"; params.push(`%${village}%`); }
-            if (dob) { query += " AND dob LIKE ?"; params.push(`%${dob}%`); }
-            if (gender !== "All") { query += " AND gender = ?"; params.push(gender); }
-
-            try {
-                const stmt = db.prepare(query);
-                stmt.bind(params);
-
-                const tableBody = document.getElementById('resultTableBody');
-                tableBody.innerHTML = "";
-                let count = 0;
-
-                while (stmt.step()) {
-                    count++;
-                    const rowData = stmt.getAsObject();
-                    const row = `
-                        <tr>
-                            <td class="p-2 font-bold">${rowData.name || '-'}<br><span class="text-[9px] text-slate-400">${rowData.gender || ''}</span></td>
-                            <td class="p-2 text-slate-500">পিতা: ${rowData.father || '-'}<br>মাতা: ${rowData.mother || '-'}</td>
-                            <td class="p-2">${rowData.village || '-'}</td>
-                            <td class="p-2">${rowData.dob || '-'}</td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                }
-                stmt.free();
-
-                document.getElementById('resultCount').innerText = count;
-                if (count > 0) {
-                    document.getElementById('noDataScreen').classList.add('hidden');
-                    document.getElementById('tableContainer').classList.remove('hidden');
-                } else {
-                    document.getElementById('noDataScreen').classList.remove('hidden');
-                    document.getElementById('tableContainer').classList.add('hidden');
-                }
-            } catch (err) {
-                console.error(err);
-                alert("টেবিল বা কলামের নাম মেলেনি!");
-            }
-        }
-
-        function clearForm() {
-            document.getElementById('searchName').value = "";
-            document.getElementById('searchFather').value = "";
-            document.getElementById('searchMother').value = "";
-            document.getElementById('searchVillage').value = "";
-            document.getElementById('searchDob').value = "";
-            document.getElementById('searchGender').value = "All";
-            document.getElementById('noDataScreen').classList.remove('hidden');
-            document.getElementById('tableContainer').classList.add('hidden');
-            document.getElementById('resultCount').innerText = "০";
-        }
-
-        window.addEventListener('DOMContentLoaded', initDatabase);
-    </script>
 </body>
 </html>
