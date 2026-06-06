@@ -3,84 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voter Data Search</title>
+    <title>ভোটার তথ্য অনুসন্ধান</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-radius;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .results {
-            margin-top: 20px;
-        }
-        .voter-card {
-            background: #e9ecef;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 500px; margin: 30px auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .status { text-align: center; font-weight: bold; color: #d35400; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #219653; }
+        .results { margin-top: 25px; }
+        .voter-card { background: #f8f9fa; border-left: 5px solid #2980b9; padding: 15px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .voter-card p { margin: 6px 0; font-size: 15px; }
+        .label { font-weight: bold; color: #34495e; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>ভোটার তথ্য অনুসন্ধান</h2>
-    <input type="text" id="searchInput" placeholder="ভোটার আইডি বা নাম লিখুন...">
-    <button onclick="searchData()">অনুসন্ধান করুন</button>
+    <div id="status" class="status">ডাটাবেজ লোড করার চেষ্টা করা হচ্ছে...</div>
+    
+    <input type="text" id="searchInput" placeholder="ভোটার আইডি বা নাম লিখুন..." disabled>
+    <button id="searchBtn" onclick="searchData()" disabled>অনুসন্ধান করুন</button>
 
     <div class="results" id="resultsContainer"></div>
 </div>
 
 <script>
-    // ডাটাবেজ বড় হওয়ার কারণে এটি লোকাল স্টোরেজ বা প্রগতিশীল অনুসন্ধানের জন্য তৈরি স্ট্রাকচার
+    let db = null;
+
+    // অ্যাপটি রান হওয়ার সাথে সাথে এটি মোবাইলের লোকাল ফোল্ডার থেকে ডাটাবেজটি টানবে
+    async function initDatabase() {
+        const statusDiv = document.getElementById('status');
+        try {
+            const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
+            
+            // যেহেতু এটি গিটহাবে থাকবে, আমরা আপেক্ষিক পথ ব্যবহার করছি যেন অ্যাপে কাজ করে
+            const response = await fetch('assets/voters.db');
+            if (!response.ok) throw new Error("Database file not found in assets/");
+            
+            const buf = await response.arrayBuffer();
+            db = new SQL.Database(new Uint8Array(buf));
+            
+            statusDiv.style.color = '#27ae60';
+            statusDiv.innerText = '🟢 ডাটাবেজ সফলভাবে সংযুক্ত হয়েছে!';
+            document.getElementById('searchInput').disabled = false;
+            document.getElementById('searchBtn').disabled = false;
+        } catch (error) {
+            console.error(error);
+            statusDiv.style.color = '#c0392b';
+            statusDiv.innerText = '🔴 ডাটাবেজ পাওয়া যায়নি! (অ্যাপ ইনস্টল করার পর ঠিক হয়ে যাবে)';
+            // টেস্টিং এর জন্য বাটন সচল রাখছি
+            document.getElementById('searchInput').disabled = false;
+            document.getElementById('searchBtn').disabled = false;
+        }
+    }
+
     function searchData() {
         const query = document.getElementById('searchInput').value.trim();
         const container = document.getElementById('resultsContainer');
         container.innerHTML = '';
 
-        if (query === '') {
-            container.innerHTML = '<p style="color: red;">অনুগ্রহ করে কিছু লিখুন!</p>';
+        if (!query) {
+            container.innerHTML = '<p style="color: red; text-align:center;">অনুগ্রহ করে কিছু লিখুন!</p>';
             return;
         }
 
-        container.innerHTML = '<p>অনুসন্ধান করা হচ্ছে... (বড় ডাটাবেজের ক্ষেত্রে কিছুটা সময় লাগতে পারে)</p>';
-        
-        // এখানে অ্যাপের ব্যাকএন্ড বা লোকাল SQLite ফাইল কল করার লজিক কাজ করবে
-        // অ্যাপটি মোবাইলে ইনস্টল হওয়ার পর এই ফাংশনটি কাজ করা শুরু করবে
+        if (!db) {
+            container.innerHTML = '<p style="color: red; text-align:center;">ডাটাবেজ এখনো প্রস্তুত নয়!</p>';
+            return;
+        }
+
+        container.innerHTML = '<p style="text-align:center;">অনুসন্ধান করা হচ্ছে...</p>';
+
+        try {
+            // আপনার ডাটাবেজের টেবিলের নাম 'voters' এবং কলাম 'id' ও 'name' ধরে করা (প্রয়োজনে পরিবর্তন করা যাবে)
+            const stmt = db.prepare("SELECT * FROM voters WHERE id = :name OR name LIKE :likeName LIMIT 50");
+            const res = stmt.execute({ ':name': query, ':likeName': '%' + query + '%' });
+            
+            container.innerHTML = '';
+            
+            if (res.length === 0 || res[0].values.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">কোনো তথ্য পাওয়া যায়নি।</p>';
+                return;
+            }
+
+            const columns = res[0].columns;
+            const rows = res[0].values;
+
+            rows.forEach(row => {
+                let card = '<div class="voter-card">';
+                columns.forEach((col, index) => {
+                    card += `<p><span class="label">${col}:</span> ${row[index]}</p>`;
+                });
+                card += '</div>';
+                container.innerHTML += card;
+            });
+
+            stmt.free();
+        } catch (e) {
+            container.innerHTML = `<p style="color:red;">সার্চ করার সময় ত্রুটি হয়েছে: ${e.message}</p>`;
+        }
     }
+
+    // ডাটাবেজ ইনিশিয়ালের ফাংশন কল
+    initDatabase();
 </script>
 
 </body>
