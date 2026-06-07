@@ -32,14 +32,10 @@
 <div class="container">
     <div class="row">
         <div class="col">
-            <select id="district">
-                <option value="Chandpur">Chandpur</option>
-            </select>
+            <select id="district"><option value="Chandpur">Chandpur</option></select>
         </div>
         <div class="col">
-            <select id="upazila">
-                <option value="Chandpur Sadar">Chandpur Sadar Upazila</option>
-            </select>
+            <select id="upazila"><option value="Chandpur Sadar">Chandpur Sadar Upazila</option></select>
         </div>
     </div>
 
@@ -74,22 +70,22 @@
     </div>
 
     <div class="results" id="resultsContainer">
-        <div class="no-data" id="noDataView">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>
+        <div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>
     </div>
 </div>
 
 <script>
     let db = null;
     
-    // আপনার দেওয়া ড্রপবক্স লিংকটিকে ডিরেক্ট ডাউনলোড লিংকে (dl=1) রূপান্তর করা হয়েছে
-    const cloudDatabaseLink = "https://www.dropbox.com/scl/fi/454l5v9s44l6wyulvtzzz/voters.db?rlkey=vqm3d0x6mv4lm5bgvsb8jpha3&st=p3vxjt6p&dl=1"; 
+    // মডিফাই করা ডিরেক্ট ড্রপবক্স লিংক (CORS Error মুক্ত)
+    const cloudDatabaseLink = "https://dl.dropboxusercontent.com/scl/fi/454l5v9s44l6wyulvtzzz/voters.db?rlkey=vqm3d0x6mv4lm5bgvsb8jpha3&st=p3vxjt6p&dl=1"; 
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // ড্রপবক্স ক্লাউড থেকে ফাইল রিড করা হচ্ছে
+            // ড্রপবক্স থেকে ফাইল রিয়েল-টাইম ডাউনলোড হচ্ছে
             const response = await fetch(cloudDatabaseLink);
             if(!response.ok) throw new Error();
             
@@ -97,8 +93,7 @@
             db = new SQL.Database(new Uint8Array(buf));
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
-            // ব্রাউজারে বা গিটহাব লাইভ লিংকে প্রথমে এটি দেখাবে, অ্যাপে রান করলে সচল হবে
-            statusText.innerText = "🟡 ক্লাউড ডাটাবেজ লোড হচ্ছে... (APK ডাউনলোড করলে সম্পূর্ণ সচল হবে)";
+            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। অনুগ্রহ করে অ্যাপে ট্রাই করুন।";
         }
     }
 
@@ -125,7 +120,7 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি ব্যাকগ্রাউন্ডে রেডি হচ্ছে বা অ্যাপটি তৈরি করে মোবাইলে ইনস্টল করতে হবে। অনুগ্রহ করে একটু অপেক্ষা করুন।");
+            alert("ডাটাবেজ ফাইলটি ব্যাকগ্রাউন্ডে লোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন বা অ্যাপ বানিয়ে মোবাইলে চেক করুন।");
             return;
         }
 
@@ -144,11 +139,10 @@
 
             const stmt = db.prepare(query);
             const res = stmt.execute(params);
-
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
+                container.innerHTML = '<div class="no-data">🔍<br>কোনo তথ্য পাওয়া যায়নি</div>';
                 countText.innerText = '0';
                 return;
             }
@@ -165,8 +159,8 @@
                     <div class="voter-card">
                         <p><span>নাম:</span> ${data.name || row[1]}</p>
                         <p><span>পিতা:</span> ${data.father_name || row[2]}</p>
-                        <p><span>مাতা:</span> ${data.mother_name || row[3]}</p>
-                        <p><span>গ্রাম/ঠিকানা:</span> ${data.address || row[4]}</p>
+                        <p><span>মাতা:</span> ${data.mother_name || row[3]}</p>
+                        <p><span>ग्राम/ঠিকানা:</span> ${data.address || row[4]}</p>
                         <p><span>জন্ম তারিখ:</span> ${data.dob || row[5] || 'N/A'}</p>
                     </div>`;
             });
@@ -175,9 +169,7 @@
             container.innerHTML = `<p style="color:red;">সার্চ ত্রুটি: ${err.message}</p>`;
         }
     }
-
     window.onload = initDatabase;
 </script>
-
 </body>
 </html>
