@@ -1,175 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Data Search System</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f5f6fa; }
-        .header { background-color: #1565c0; color: white; padding: 15px; font-size: 20px; font-weight: bold; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .container { max-width: 600px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .col { flex: 1; display: flex; align-items: center; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fdfdfd; font-size: 14px; }
-        label { width: 60px; font-weight: bold; font-size: 14px; color: #333; }
-        .btn-container { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; color: white; }
-        .btn-search { background-color: #2e7d32; }
-        .btn-clear { background-color: #c62828; }
-        .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; margin-top: 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
-        .results { margin-top: 15px; }
-        .no-data { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 16px; }
-        .voter-card { background: #fff; border: 1px solid #dfe4ea; border-left: 5px solid #1565c0; padding: 12px; margin-bottom: 10px; border-radius: 4px; text-align: left; }
-        .voter-card p { margin: 5px 0; font-size: 14px; }
-        .voter-card span { font-weight: bold; color: #555; }
-    </style>
-</head>
-<body>
-
-<div class="header">Easy Data Search System</div>
-
-<div class="container">
-    <div class="row">
-        <div class="col">
-            <select id="district"><option value="Chandpur">Chandpur</option></select>
-        </div>
-        <div class="col">
-            <select id="upazila"><option value="Chandpur Sadar">Chandpur Sadar Upazila</option></select>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col"><label>নাম:</label><input type="text" id="name" placeholder="লিখুন..."></div>
-        <div class="col"><label>পিতা:</label><input type="text" id="father" placeholder="লিখুন..."></div>
-    </div>
-    <div class="row">
-        <div class="col"><label>মাতা:</label><input type="text" id="mother" placeholder="লিখুন..."></div>
-        <div class="col"><label>গ্রাম:</label><input type="text" id="village" placeholder="লিখুন..."></div>
-    </div>
-    <div class="row">
-        <div class="col"><label>জ. তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
-        <div class="col">
-            <label>লিঙ্গ:</label>
-            <select id="gender">
-                <option value="All">All</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="btn-container">
-        <button class="btn-search" onclick="searchData()">🔍 সার্চ</button>
-        <button class="btn-clear" onclick="clearFields()">🔄 ক্লিয়ার</button>
-    </div>
-
-    <div class="status-bar">
-        <span id="statusText">🔄 ক্লাউড ডাটাবেজ কানেক্ট করা হচ্ছে...</span>
-        <span>ফলাফল: <span id="countText">0</span> জন</span>
-    </div>
-
-    <div class="results" id="resultsContainer">
-        <div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>
-    </div>
-</div>
-
-<script>
-    let db = null;
-    
-    // মডিফাই করা ডিরেক্ট ড্রপবক্স লিংক (CORS Error মুক্ত)
-    const cloudDatabaseLink = "https://dl.dropboxusercontent.com/scl/fi/454l5v9s44l6wyulvtzzz/voters.db?rlkey=vqm3d0x6mv4lm5bgvsb8jpha3&st=p3vxjt6p&dl=1"; 
-
-    async function initDatabase() {
-        const statusText = document.getElementById('statusText');
-        try {
-            const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
-            
-            // ড্রপবক্স থেকে ফাইল রিয়েল-টাইম ডাউনলোড হচ্ছে
-            const response = await fetch(cloudDatabaseLink);
-            if(!response.ok) throw new Error();
-            
-            const buf = await response.arrayBuffer();
-            db = new SQL.Database(new Uint8Array(buf));
-            statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
-        } catch (e) {
-            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। অনুগ্রহ করে অ্যাপে ট্রাই করুন।";
-        }
-    }
-
-    function clearFields() {
-        document.getElementById('name').value = '';
-        document.getElementById('father').value = '';
-        document.getElementById('mother').value = '';
-        document.getElementById('village').value = '';
-        document.getElementById('dob').value = '';
-        document.getElementById('gender').value = 'All';
-        document.getElementById('resultsContainer').innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
-        document.getElementById('countText').innerText = '0';
-    }
-
-    function searchData() {
-        const name = document.getElementById('name').value.trim();
-        const father = document.getElementById('father').value.trim();
-        const mother = document.getElementById('mother').value.trim();
-        const village = document.getElementById('village').value.trim();
-        const dob = document.getElementById('dob').value.trim();
-        const gender = document.getElementById('gender').value;
-        
-        const container = document.getElementById('resultsContainer');
-        const countText = document.getElementById('countText');
-
-        if (!db) {
-            alert("ডাটাবেজ ফাইলটি ব্যাকগ্রাউন্ডে লোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন বা অ্যাপ বানিয়ে মোবাইলে চেক করুন।");
-            return;
-        }
-
-        try {
-            let query = "SELECT * FROM voters WHERE 1=1";
-            let params = {};
-
-            if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
-            if(father) { query += " AND father_name LIKE :father"; params[':father'] = `%${father}%`; }
-            if(mother) { query += " AND mother_name LIKE :mother"; params[':mother'] = `%${mother}%`; }
-            if(village) { query += " AND address LIKE :village"; params[':village'] = `%${village}%`; }
-            if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
-            if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
-
-            query += " LIMIT 50";
-
-            const stmt = db.prepare(query);
-            const res = stmt.execute(params);
-            container.innerHTML = '';
-
-            if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<div class="no-data">🔍<br>কোনo তথ্য পাওয়া যায়নি</div>';
-                countText.innerText = '0';
-                return;
-            }
-
-            const columns = res[0].columns;
-            const rows = res[0].values;
-            countText.innerText = rows.length;
-
-            rows.forEach(row => {
-                let data = {};
-                columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
-
-                container.innerHTML += `
-                    <div class="voter-card">
-                        <p><span>নাম:</span> ${data.name || row[1]}</p>
-                        <p><span>পিতা:</span> ${data.father_name || row[2]}</p>
-                        <p><span>মাতা:</span> ${data.mother_name || row[3]}</p>
-                        <p><span>ग्राम/ঠিকানা:</span> ${data.address || row[4]}</p>
-                        <p><span>জন্ম তারিখ:</span> ${data.dob || row[5] || 'N/A'}</p>
-                    </div>`;
-            });
-            stmt.free();
-        } catch (err) {
-            container.innerHTML = `<p style="color:red;">সার্চ ত্রুটি: ${err.message}</p>`;
-        }
-    }
-    window.onload = initDatabase;
-</script>
-</body>
-</html>
+                    <!DOCTYPE html><!--KaoYQ3eP1s323MbKph3mg--><html lang="bn" class="__className_59bdbc"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" href="/_next/static/media/deb0a8988b10e311-s.p.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="stylesheet" href="/_next/static/css/6042d6c2ebbf5a48.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/webpack-ad343bbdc5496a17.js"/><script src="/_next/static/chunks/4bd1b696-cf72ae8a39fa05aa.js" async=""></script><script src="/_next/static/chunks/964-540481dc452dbf61.js" async=""></script><script src="/_next/static/chunks/main-app-69496ec153f69d22.js" async=""></script><script src="/_next/static/chunks/766-62c35d26db8f5f24.js" async=""></script><script src="/_next/static/chunks/874-88e24f0e286df0b2.js" async=""></script><script src="/_next/static/chunks/app/layout-3788cabc26fa93ad.js" async=""></script><script src="/_next/static/chunks/app/page-f7cd102d8a8a6cdc.js" async=""></script><script src="/_next/static/chunks/app/mouza-map/page-143524d5d2c43295.js" async=""></script><link rel="preload" href="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3860090398408867" as="script" crossorigin=""/><link rel="preload" href="https://www.googletagmanager.com/gtag/js?id=G-69B0JG9H0G" as="script"/><meta name="next-size-adjust" content=""/><title>land gov bd | eporcha gov bd</title><meta name="description" content="From the website www.land.gov bd you can download আর এস খতিয়ান..."/><link rel="author" href="https://dlrmslandgovbd.com"/><meta name="author" content="land gov bd"/><meta name="keywords" content="land gov bd, eporcha gov bd, khatian..."/><meta name="google-site-verification" content="4QUxDKC7cZoW5ba4xjDJHHzAC7akVCXiyM7DwVKQKJ8"/><link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="32x32"/><script src="/_next/static/chunks/polyfills-42372ed130431b0a.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><nav class="bg-white p-4 text-black text-[10px] md:text-lg shadow flex justify-between items-center"><a href="/"><img alt="Logo" loading="lazy" width="150" height="50" decoding="async" data-nimg="1" class="w-30" style="color:transparent" srcSet="/_next/image?url=%2Flogo.webp&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.webp&amp;w=384&amp;q=75 2x" src="/_next/image?url=%2Flogo.webp&amp;w=384&amp;q=75"/></a><ul class="hidden md:flex space-x-4"><li><a href="/">হোম</a></li><li><a href="/about">আমাদের সম্পর্কে</a></li><li><a href="/services">জ্ঞাতব্য</a></li><li><a href="/contact">আবেদনের অবস্থা</a></li><li><a href="/login">নির্দেশিকা</a></li></ul><button class="md:hidden" aria-label="Open menu"><img alt="Open Menu" loading="lazy" width="28" height="28" decoding="async" data-nimg="1" style="color:transparent" src="/icons/hamburger.svg"/></button></nav><div class="fixed top-0 left-0 h-full bg-white z-50 w-[80vw] transform transition-transform duration-300 ease-in-out -translate-x-full"><div class="flex justify-between items-center p-4 border-b"><a href="/"><img alt="Logo" loading="lazy" width="120" height="40" decoding="async" data-nimg="1" style="color:transparent" srcSet="/_next/image?url=%2Flogo.webp&amp;w=128&amp;q=75 1x, /_next/image?url=%2Flogo.webp&amp;w=256&amp;q=75 2x" src="/_next/image?url=%2Flogo.webp&amp;w=256&amp;q=75"/></a><button aria-label="Close menu"><img alt="Close" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" style="color:transparent" src="/icons/close.svg"/></button></div><ul class="flex flex-col space-y-4 p-6 text-sm"><li><a href="/">হোম</a></li><li><a href="/about">আমাদের সম্পর্কে</a></li><li><a href="/services">জ্ঞাতব্য</a></li><li><a href="/contact">আবেদনের অবস্থা</a></li><li><a href="/guidline">নির্দেশিকা</a></li></ul></div><main class="flex flex-col w-full md:max-w-[1280px] mx-auto"><div class="surveyBox"><h2 class="mt-5 mb-5 text-white text-center bg-[#006600] rounded py-2 text-sm sm:text-xl font-bold mx-1">মৌজা ম্যাপ ডাউনলোড একদম ফ্রী - eMouza মৌজা ম্যাপ বিডি</h2><div class=" grid  grid-cols-2  md:grid-cols-3  lg:[grid-template-columns:190px_190px_190px_190px_1fr]  gap-[2px] text-[15px] font-[&#x27;Tiro_Bangla&#x27;] "><div class="bg-[#f8fff6] border border-[#ddd] rounded-[5px] flex flex-col overflow-hidden min-h-[300px]"><div class="bg-[#eaffea] p-2 font-bold border-b border-[#ccc]">বিভাগ</div><ul class="flex-1 overflow-y-auto max-h-[300px] list-none p-0 m-0 lg:overflow-x-hidden"><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">ময়মনসিংহ</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">সিলেট</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">রংপুর</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">রাজশাহী</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">খুলনা</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">ঢাকা</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">চট্টগ্রাম</li><li class="
+              px-3 py-2 
+              cursor-pointer 
+              transition-all 
+              border-b border-[#ccc]
+              hover:bg-[#00994d] hover:text-white
+              
+            ">বরিশাল</li></ul></div><div class="bg-[#f8fff6] border border-[#ddd] rounded-[5px] flex flex-col overflow-hidden min-h-[300px]"><div class="bg-[#eaffea] p-2 font-bold border-b border-[#ccc]">জেলা</div><ul class="flex-1 overflow-y-auto max-h-[300px] list-none p-0 m-0 lg:overflow-x-hidden"></ul></div><div class="bg-[#f8fff6] border border-[#ddd] rounded-[5px] flex flex-col overflow-hidden min-h-[300px]"><div class="bg-[#eaffea] p-2 font-bold border-b border-[#ccc]">উপজেলা/থানা</div><ul class="flex-1 overflow-y-auto max-h-[300px] list-none p-0 m-0 lg:overflow-x-hidden"></ul></div><div class="bg-[#f8fff6] border border-[#ddd] rounded-[5px] flex flex-col overflow-hidden min-h-[300px]"><div class="bg-[#eaffea] p-2 font-bold border-b border-[#ccc]">খতিয়ানের ধরন</div><ul class="flex-1 overflow-y-auto max-h-[300px] list-none p-0 m-0 lg:overflow-x-hidden"></ul></div><div class="bg-[#f8fff6] border border-[#ddd] rounded-[5px] flex flex-col overflow-hidden min-h-[300px]"><div class="bg-[#eaffea] p-2 font-bold border-b border-[#ccc]">মৌজার তালিকা</div><div class="p-[6px_8px] border-b border-[#ccc]"><input type="text" placeholder="অনুসন্ধান" class="w-full p-[6px] text-[14px] border" value=""/></div><ul class="flex-1 overflow-y-auto max-h-[300px] list-none p-0 m-0 lg:overflow-x-hidden"></ul></div></div></div><!--$--><!--/$--></main><div class=""><div class="w-full mb-7" style="background-image:linear-gradient(to right, var(--tw-gradient-stops))"></div><div class="bg-[#E4FFE2]"><div class="lg:container lg:mx-auto lg:px-[45px] flex flex-col lg:flex-row space-y-7 lg:space-y-0 justify-center lg:justify-normal pt-12 px-5"><div class="flex justify-around lg:justify-normal gap-10 lg:w-[30%]"><div class="lg:flex lg:flex-col lg:space-y-2"><h3 class="text-14 lg:text-20 font-medium text-bottleGreen pb-2 lg:pb-0 text-start lg:text-center">গুরুত্বপূর্ণ লিঙ্ক</h3><ul class="lg:flex lg:flex-col lg:space-y-2"><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a target="_blank" rel="noopener noreferrer" class="text-12 lg:text-14 font-medium" href="https://bangladesh.gov.bd/index.php">বাংলাদেশ জাতীয় তথ্য বাতায়ন</a></li><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a target="_blank" rel="noopener noreferrer" class="text-12 lg:text-14 font-medium" href="https://minland.gov.bd/">ভূমি মন্ত্রণালয়</a></li><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a target="_blank" rel="noopener noreferrer" class="text-12 lg:text-14 font-medium" href="http://www.pressinform.gov.bd/">তথ্য অধিদপ্তর (পিআইডি)</a></li><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a target="_blank" rel="noopener noreferrer" class="text-12 lg:text-14 font-medium" href="https://www.grs.gov.bd/">অভিযোগ প্রতিকার ব্যবস্থা</a></li></ul></div><div class="pt-8 lg:pt-10"><ul class="lg:flex lg:flex-col lg:space-y-2"><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a class="text-12 lg:text-14 font-medium" href="/nitimala">গোপনীয়তা নীতি</a></li><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a class="text-12 lg:text-14 font-medium" href="/faq">সাধারণ জিজ্ঞাসা</a></li><li class="flex items-center"><img alt="icon" loading="lazy" width="24" height="24" decoding="async" data-nimg="1" class="w-6 h-6" style="color:transparent" src="/images/icon/triangleright.svg"/><a class="text-12 lg:text-14 font-medium" href="/contact">যোগাযোগ</a></li></ul></div></div><div class="flex flex-col space-y-6 lg:space-y-0 lg:w-[70%]"><div class="flex flex-col lg:flex-row justify-center lg:justify-between gap-4 lg:gap-0"><div class="flex flex-col items-center lg:ml-[4.5em]"><h3 class="text-14 lg:text-18 text-center">পরিকল্পনা ও বাস্তবায়নে</h3><div class="w-[10em] lg:w-[12.5em] p-1 rounded-sm flex flex-col items-center"><a target="_blank" href="https://lmap.minland.gov.bd/"><img alt="lmap" loading="lazy" width="200" height="115" decoding="async" data-nimg="1" class="" style="color:transparent" srcSet="/_next/image?url=%2Flogo.webp&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.webp&amp;w=640&amp;q=75 2x" src="/_next/image?url=%2Flogo.webp&amp;w=640&amp;q=75"/></a></div></div><div class="flex justify-between lg:gap-[3.3rem]"><div class="flex flex-col items-center gap-1"><h3 class="text-14 lg:text-18">অ্যাপ ডাউনলোড করুন</h3><div class="flex items-center gap-2"><a href="#" target="_blank"><img alt="Play Store" loading="lazy" width="120" height="40" decoding="async" data-nimg="1" class="w-28 lg:w-32" style="color:transparent" srcSet="/_next/image?url=%2Fimages%2Ficon%2Fplay_store.webp&amp;w=128&amp;q=75 1x, /_next/image?url=%2Fimages%2Ficon%2Fplay_store.webp&amp;w=256&amp;q=75 2x" src="/_next/image?url=%2Fimages%2Ficon%2Fplay_store.webp&amp;w=256&amp;q=75"/></a><a href="#" target="_blank"><img alt="iOS Store" loading="lazy" width="120" height="40" decoding="async" data-nimg="1" class="w-28 lg:w-32 h-[2rem] lg:h-[2.4rem]" style="color:transparent" srcSet="/_next/image?url=%2Fimages%2Ficon%2Fios_store.webp&amp;w=128&amp;q=75 1x, /_next/image?url=%2Fimages%2Ficon%2Fios_store.webp&amp;w=256&amp;q=75 2x" src="/_next/image?url=%2Fimages%2Ficon%2Fios_store.webp&amp;w=256&amp;q=75"/></a></div></div><div class="flex flex-col space-y-3 lg:items-end"><h3 class="text-15 lg:text-18 text-semiblack text-center lg:text-right">সামাজিক যোগাযোগ</h3><div class="flex justify-center lg:justify-normal space-x-3 lg:space-x-5 pl-2 lg:pl-0"><a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><img alt="social" loading="lazy" width="34" height="34" decoding="async" data-nimg="1" class="w-[18px] h-[18px] lg:w-[34px] lg:h-[30px]" style="color:transparent" src="/images/social/Facebook.svg"/></a><a href="https://twitter.com/" target="_blank" rel="noopener noreferrer"><img alt="social" loading="lazy" width="34" height="34" decoding="async" data-nimg="1" class="w-[18px] h-[18px] lg:w-[34px] lg:h-[30px]" style="color:transparent" srcSet="/_next/image?url=%2Fimages%2Fsocial%2Ftwitter.webp&amp;w=48&amp;q=75 1x, /_next/image?url=%2Fimages%2Fsocial%2Ftwitter.webp&amp;w=96&amp;q=75 2x" src="/_next/image?url=%2Fimages%2Fsocial%2Ftwitter.webp&amp;w=96&amp;q=75"/></a><a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><img alt="social" loading="lazy" width="34" height="34" decoding="async" data-nimg="1" class="w-[18px] h-[18px] lg:w-[34px] lg:h-[30px]" style="color:transparent" src="/images/social/instagram.svg"/></a><a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer"><img alt="social" loading="lazy" width="34" height="34" decoding="async" data-nimg="1" class="w-[18px] h-[18px] lg:w-[34px] lg:h-[30px]" style="color:transparent" src="/images/social/Youtube.svg"/></a></div></div></div></div></div></div></div><div class="flex justify-center items-center"><p class="bg-red-100 p-2 text-center text-12 w-full">© 2026 dlrmslandgovbd.com — এই সাইট শুধুমাত্র dlrms.land.gov.bd এর পাব্লিকলি এভেইলেবল ডেটা প্রদর্শন করে। কোনো সরকারি সেবা প্রদান করে না ও কোন ফি নেয় না</p></div></div><script src="/_next/static/chunks/webpack-ad343bbdc5496a17.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[6323,[\"766\",\"static/chunks/766-62c35d26db8f5f24.js\",\"874\",\"static/chunks/874-88e24f0e286df0b2.js\",\"177\",\"static/chunks/app/layout-3788cabc26fa93ad.js\"],\"default\"]\n3:I[7555,[],\"\"]\n4:I[1295,[],\"\"]\n5:I[3063,[\"766\",\"static/chunks/766-62c35d26db8f5f24.js\",\"874\",\"static/chunks/874-88e24f0e286df0b2.js\",\"177\",\"static/chunks/app/layout-3788cabc26fa93ad.js\"],\"Image\"]\n11:I[8393,[],\"\"]\n:HL[\"/_next/static/media/deb0a8988b10e311-s.p.woff2\",\"font\",{\"crossOrigin\":\"\",\"type\":\"font/woff2\"}]\n:HL[\"/_next/static/css/6042d6c2ebbf5a48.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"b\":\"KaoYQ3eP1s323MbKph3mg\",\"p\":\"\",\"c\":[\"\",\"mouza-map\"],\"i\":false,\"f\":[[[\"\",{\"children\":[\"mouza-map\",{\"children\":[\"__PAGE__\",{}]}]},\"$undefined\",\"$undefined\",true],[\"\",[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/css/6042d6c2ebbf5a48.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"bn\",\"className\":\"__className_59bdbc\",\"children\":[\"$\",\"body\",null,{\"children\":[[\"$\",\"$L2\",null,{}],[\"$\",\"main\",null,{\"className\":\"flex flex-col w-full md:max-w-[1280px] mx-auto\",\"children\":[\"$\",\"$L3\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L4\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}],[\"$\",\"div\",null,{\"className\":\"\",\"children\":[[\"$\",\"div\",null,{\"className\":\"w-full mb-7\",\"style\":{\"backgroundImage\":\"linear-gradient(to right, var(--tw-gradient-stops))\"}}],[\"$\",\"div\",null,{\"className\":\"bg-[#E4FFE2]\",\"children\":[\"$\",\"div\",null,{\"className\":\"lg:container lg:mx-auto lg:px-[45px] flex flex-col lg:flex-row space-y-7 lg:space-y-0 justify-center lg:justify-normal pt-12 px-5\",\"children\":[[\"$\",\"div\",null,{\"className\":\"flex justify-around lg:justify-normal gap-10 lg:w-[30%]\",\"children\":[[\"$\",\"div\",null,{\"className\":\"lg:flex lg:flex-col lg:space-y-2\",\"children\":[[\"$\",\"h3\",null,{\"className\":\"text-14 lg:text-20 font-medium text-bottleGreen pb-2 lg:pb-0 text-start lg:text-center\",\"children\":\"গুরুত্বপূর্ণ লিঙ্ক\"}],[\"$\",\"ul\",null,{\"className\":\"lg:flex lg:flex-col lg:space-y-2\",\"children\":[[\"$\",\"li\",\"https://bangladesh.gov.bd/index.php\",{\"className\":\"flex items-center\",\"children\":[[\"$\",\"$L5\",null,{\"src\":\"/images/icon/triangleright.svg\",\"alt\":\"icon\",\"width\":24,\"height\":24,\"className\":\"w-6 h-6\"}],[\"$\",\"a\",null,{\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"className\":\"text-12 lg:text-14 font-medium\",\"href\":\"https://bangladesh.gov.bd/index.php\",\"children\":\"বাংলাদেশ জাতীয় তথ্য বাতায়ন\"}]]}],[\"$\",\"li\",\"https://minland.gov.bd/\",{\"className\":\"flex items-center\",\"children\":[[\"$\",\"$L5\",null,{\"src\":\"/images/icon/triangleright.svg\",\"alt\":\"icon\",\"width\":24,\"height\":24,\"className\":\"w-6 h-6\"}],[\"$\",\"a\",null,{\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"className\":\"text-12 lg:text-14 font-medium\",\"href\":\"https://minland.gov.bd/\",\"children\":\"ভূমি মন্ত্রণালয়\"}]]}],[\"$\",\"li\",\"http://www.pressinform.gov.bd/\",{\"className\":\"flex items-center\",\"children\":[[\"$\",\"$L5\",null,{\"src\":\"/images/icon/triangleright.svg\",\"alt\":\"icon\",\"width\":24,\"height\":24,\"className\":\"w-6 h-6\"}],[\"$\",\"a\",null,{\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"className\":\"text-12 lg:text-14 font-medium\",\"href\":\"http://www.pressinform.gov.bd/\",\"children\":\"তথ্য অধিদপ্তর (পিআইডি)\"}]]}],[\"$\",\"li\",\"https://www.grs.gov.bd/\",{\"className\":\"flex items-center\",\"children\":[[\"$\",\"$L5\",null,{\"src\":\"/images/icon/triangleright.svg\",\"alt\":\"icon\",\"width\":24,\"height\":24,\"className\":\"w-6 h-6\"}],[\"$\",\"a\",null,{\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"className\":\"text-12 lg:text-14 font-medium\",\"href\":\"https://www.grs.gov.bd/\",\"children\":\"অভিযোগ প্রতিকার ব্যবস্থা\"}]]}]]}]]}],[\"$\",\"div\",null,{\"className\":\"pt-8 lg:pt-10\",\"children\":[\"$\",\"ul\",null,{\"className\":\"lg:flex lg:fle
