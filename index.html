@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forhad khandokar</title>
+    <title>Easy Data Search System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f5f6fa; }
@@ -32,21 +32,33 @@
 <div class="container">
     <div class="row">
         <div class="col">
-            <select id="district"><option value="Chandpur">Chandpur</option></select>
+            <select id="district">
+                <option value="All">সব জেলা (All)</option>
+                <option value="Chandpur">Chandpur</option>
+            </select>
         </div>
         <div class="col">
-            <select id="upazila"><option value="Chandpur Sadar">Chandpur Sadar Upazila</option></select>
+            <select id="upazila">
+                <option value="All">সব উপজেলা (All)</option>
+                <option value="Chandpur Sadar">Chandpur Sadar</option>
+            </select>
         </div>
+    </div>
+
+    <div class="row">
+        <div class="col" style="flex: 1;"><label>ভোটার ID:</label><input type="text" id="voterId" placeholder="ভোটার আইডি লিখুন..."></div>
     </div>
 
     <div class="row">
         <div class="col"><label>নাম:</label><input type="text" id="name" placeholder="লিখুন..."></div>
         <div class="col"><label>পিতা:</label><input type="text" id="father" placeholder="লিখুন..."></div>
     </div>
+    
     <div class="row">
         <div class="col"><label>মাতা:</label><input type="text" id="mother" placeholder="লিখুন..."></div>
         <div class="col"><label>গ্রাম:</label><input type="text" id="village" placeholder="লিখুন..."></div>
     </div>
+    
     <div class="row">
         <div class="col"><label>জ. তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
         <div class="col">
@@ -77,27 +89,32 @@
 <script>
     let db = null;
     
-    // মডিফাই করা ডিরেক্ট ড্রপবক্স লিংক (CORS Error মুক্ত)
-    const cloudDatabaseLink = "https://dl.dropboxusercontent.com/scl/fi/454l5v9s44l6wyulvtzzz/voters.db?rlkey=vqm3d0x6mv4lm5bgvsb8jpha3&st=p3vxjt6p&dl=1"; 
+    // 🟢 আপনার আপলোড করা রেপো এবং ফাইলের নিখুঁত jsDelivr CDN লিংক
+    const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters.db"; 
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
+            statusText.innerText = "🔄 গিটহাব থেকে ডাটাবেজ ডাউনলোড হচ্ছে (১০ এমবি)... একটু অপেক্ষা করুন।";
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // ড্রপবক্স থেকে ফাইল রিয়েল-টাইম ডাউনলোড হচ্ছে
-            const response = await fetch(cloudDatabaseLink);
-            if(!response.ok) throw new Error();
+            // গিটহাব সিডিএন থেকে ১০ এমবি ফাইল রিড করা হচ্ছে
+            const response = await fetch(githubDatabaseLink);
+            if(!response.ok) throw new Error("Database fetch failed");
             
             const buf = await response.arrayBuffer();
             db = new SQL.Database(new Uint8Array(buf));
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
-            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। অনুগ্রহ করে অ্যাপে ট্রাই করুন।";
+            console.error(e);
+            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। গিটহাব লিংক বা ইন্টারনেট চেক করুন।";
         }
     }
 
     function clearFields() {
+        document.getElementById('district').value = 'All';
+        document.getElementById('upazila').value = 'All';
+        document.getElementById('voterId').value = '';
         document.getElementById('name').value = '';
         document.getElementById('father').value = '';
         document.getElementById('mother').value = '';
@@ -109,6 +126,9 @@
     }
 
     function searchData() {
+        const district = document.getElementById('district').value;
+        const upazila = document.getElementById('upazila').value;
+        const voterId = document.getElementById('voterId').value.trim();
         const name = document.getElementById('name').value.trim();
         const father = document.getElementById('father').value.trim();
         const mother = document.getElementById('mother').value.trim();
@@ -120,7 +140,7 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি ব্যাকগ্রাউন্ডে লোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
+            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। ১০ এমবি ফাইল তাই একটু সময় লাগতে পারে✅।");
             return;
         }
 
@@ -128,6 +148,12 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
+            // নতুন যুক্ত হওয়া টেবিল কলামের কুয়েরি ফিল্টারিং
+            if(district !== 'All') { query += " AND district = :district"; params[':district'] = district; }
+            if(upazila !== 'All') { query += " AND upazila = :upazila"; params[':upazila'] = upazila; }
+            if(voterId) { query += " AND voter_id = :voterId"; params[':voterId'] = voterId; }
+            
+            // পূর্বের টেক্সট ফিল্টারিং
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
             if(father) { query += " AND father_name LIKE :father"; params[':father'] = `%${father}%`; }
             if(mother) { query += " AND mother_name LIKE :mother"; params[':mother'] = `%${mother}%`; }
@@ -135,14 +161,14 @@
             if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
 
-            query += " LIMIT 500";
+            query += " LIMIT 500"; // ব্রাউজার ক্র্যাশ হওয়া রোধ করতে লিমিট ৫০০ রাখা হয়েছে
 
             const stmt = db.prepare(query);
             const res = stmt.execute(params);
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<div class="no-data">🔍<br>কোনo তথ্য পাওয়া যায়নি</div>';
+                container.innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
                 countText.innerText = '0';
                 return;
             }
@@ -155,13 +181,18 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
+                // সব ডেটা ডাইনামিক্যালি কার্ডে প্রদর্শন করার ডিজাইন
                 container.innerHTML += `
                     <div class="voter-card">
-                        <p><span>নাম:</span> ${data.name || row[1]}</p>
-                        <p><span>পিতা:</span> ${data.father_name || row[2]}</p>
-                        <p><span>মাতা:</span> ${data.mother_name || row[3]}</p>
-                        <p><span>ग्राम/ঠিকানা:</span> ${data.address || row[4]}</p>
-                        <p><span>জন্ম তারিখ:</span> ${data.dob || row[5] || 'N/A'}</p>
+                        <p><span>ভোটার ID:</span> ${data.voter_id || 'N/A'}</p>
+                        <p><span>নাম:</span> ${data.name || 'N/A'}</p>
+                        <p><span>পিতা:</span> ${data.father_name || 'N/A'}</p>
+                        <p><span>মাতা:</span> ${data.mother_name || 'N/A'}</p>
+                        <p><span>গ্রাম/ঠিকানা:</span> ${data.address || 'N/A'}</p>
+                        <p><span>উপজেলা:</span> ${data.upazila || 'N/A'}</p>
+                        <p><span>জেলা:</span> ${data.district || 'N/A'}</p>
+                        <p><span>জন্ম তারিখ:</span> ${data.dob || 'N/A'}</p>
+                        <p><span>লিঙ্গ:</span> ${data.gender || 'N/A'}</p>
                     </div>`;
             });
             stmt.free();
