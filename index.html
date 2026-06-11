@@ -89,16 +89,14 @@
 <script>
     let db = null;
     
-    // 🟢 আপনার আপলোড করা রেপো এবং ফাইলের নিখুঁত jsDelivr CDN লিংক
     const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters.db"; 
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
-            statusText.innerText = "🔄 গিটহাব থেকে ডাটাবেজ ডাউনলোড হচ্ছে (১০ এমবি)... একটু অপেক্ষা করুন।";
+            statusText.innerText = "🔄 গিটহাব থেকে ডাটাবেজ ডাউনলোড হচ্ছে... একটু অপেক্ষা করুন।";
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // গিটহাব সিডিএন থেকে ১০ এমবি ফাইল রিড করা হচ্ছে
             const response = await fetch(githubDatabaseLink);
             if(!response.ok) throw new Error("Database fetch failed");
             
@@ -107,7 +105,7 @@
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
             console.error(e);
-            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। গিটহাব লিংক বা ইন্টারনেট চেক করুন।";
+            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। গিটহাব লিংক চেক করুন।";
         }
     }
 
@@ -140,7 +138,7 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। ১০ এমবি ফাইল তাই একটু সময় লাগতে পারে✅।");
+            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
             return;
         }
 
@@ -148,12 +146,9 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
-            // নতুন যুক্ত হওয়া টেবিল কলামের কুয়েরি ফিল্টারিং
             if(district !== 'All') { query += " AND district = :district"; params[':district'] = district; }
             if(upazila !== 'All') { query += " AND upazila = :upazila"; params[':upazila'] = upazila; }
             if(voterId) { query += " AND voter_id = :voterId"; params[':voterId'] = voterId; }
-            
-            // পূর্বের টেক্সট ফিল্টারিং
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
             if(father) { query += " AND father_name LIKE :father"; params[':father'] = `%${father}%`; }
             if(mother) { query += " AND mother_name LIKE :mother"; params[':mother'] = `%${mother}%`; }
@@ -161,10 +156,10 @@
             if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
 
-            query += " LIMIT 500"; // ব্রাউজার ক্র্যাশ হওয়া রোধ করতে লিমিট ৫০০ রাখা হয়েছে
+            query += " LIMIT 500";
 
-            const stmt = db.prepare(query);
-            const res = stmt.execute(params);
+            // 🟢 sql.js এর জন্য সঠিক নিয়মে কুয়েরি এক্সিকিউট করা হলো
+            const res = db.exec(query, params);
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
@@ -181,7 +176,6 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
-                // সব ডেটা ডাইনামিক্যালি কার্ডে প্রদর্শন করার ডিজাইন
                 container.innerHTML += `
                     <div class="voter-card">
                         <p><span>ভোটার ID:</span> ${data.voter_id || 'N/A'}</p>
@@ -195,7 +189,6 @@
                         <p><span>লিঙ্গ:</span> ${data.gender || 'N/A'}</p>
                     </div>`;
             });
-            stmt.free();
         } catch (err) {
             container.innerHTML = `<p style="color:red;">সার্চ ত্রুটি: ${err.message}</p>`;
         }
