@@ -60,7 +60,7 @@
     </div>
     
     <div class="row">
-        <div class="col"><label>জ. তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
+        <div class="col"><label>জম্ম তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
         <div class="col">
             <label>লিঙ্গ:</label>
             <select id="gender">
@@ -146,19 +146,19 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
-            if(district !== 'All') { query += " AND district = :district"; params[':district'] = district; }
-            if(upazila !== 'All') { query += " AND upazila = :upazila"; params[':upazila'] = upazila; }
-            if(voterId) { query += " AND voter_id = :voterId"; params[':voterId'] = voterId; }
+            // কলামের নাম ভিন্ন হলেও সার্চ যেন কাজ করে তার জন্য OR ব্যবহার করা হয়েছে
+            if(district !== 'All') { query += " AND (district LIKE :district OR district_name LIKE :district)"; params[':district'] = `%${district}%`; }
+            if(upazila !== 'All') { query += " AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila)"; params[':upazila'] = `%${upazila}%`; }
+            if(voterId) { query += " AND (voter_id = :voterId OR id = :voterId OR card_no = :voterId)"; params[':voterId'] = voterId; }
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
-            if(father) { query += " AND father_name LIKE :father"; params[':father'] = `%${father}%`; }
-            if(mother) { query += " AND mother_name LIKE :mother"; params[':mother'] = `%${mother}%`; }
-            if(village) { query += " AND address LIKE :village"; params[':village'] = `%${village}%`; }
-            if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
+            if(father) { query += " AND (father_name LIKE :father OR father LIKE :father)"; params[':father'] = `%${father}%`; }
+            if(mother) { query += " AND (mother_name LIKE :mother OR mother LIKE :mother)"; params[':mother'] = `%${mother}%`; }
+            if(village) { query += " AND (address LIKE :village OR village LIKE :village OR address_details LIKE :village)"; params[':village'] = `%${village}%`; }
+            if(dob) { query += " AND (dob = :dob OR date_of_birth = :dob OR birth_date = :dob)"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
 
-            query += " LIMIT 500";
+            query += " LIMIT 5000";
 
-            // 🟢 sql.js এর জন্য সঠিক নিয়মে কুয়েরি এক্সিকিউট করা হলো
             const res = db.exec(query, params);
             container.innerHTML = '';
 
@@ -176,17 +176,29 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
+                // 🛠️ ডাটাবেজে ভিন্ন ভিন্ন নামে কলাম থাকলে তা খুঁজে বের করার লজিক (Fallback Mechanism)
+                let vId = data.voter_id || data.id || data.card_no || 'N/A';
+                let vUpazila = data.upazila || data.upazila_name || data.upazilla || 'N/A';
+                let vDob = data.dob || data.date_of_birth || data.birth_date || 'N/A';
+                
+                let vName = data.name || 'N/A';
+                let vFather = data.father_name || data.father || 'N/A';
+                let vMother = data.mother_name || data.mother || 'N/A';
+                let vAddress = data.address || data.village || data.address_details || 'N/A';
+                let vDistrict = data.district || data.district_name || 'N/A';
+                let vGender = data.gender || 'N/A';
+
                 container.innerHTML += `
                     <div class="voter-card">
-                        <p><span>ভোটার ID:</span> ${data.voter_id || 'N/A'}</p>
-                        <p><span>নাম:</span> ${data.name || 'N/A'}</p>
-                        <p><span>পিতা:</span> ${data.father_name || 'N/A'}</p>
-                        <p><span>মাতা:</span> ${data.mother_name || 'N/A'}</p>
-                        <p><span>গ্রাম/ঠিকানা:</span> ${data.address || 'N/A'}</p>
-                        <p><span>উপজেলা:</span> ${data.upazila || 'N/A'}</p>
-                        <p><span>জেলা:</span> ${data.district || 'N/A'}</p>
-                        <p><span>জন্ম তারিখ:</span> ${data.dob || 'N/A'}</p>
-                        <p><span>লিঙ্গ:</span> ${data.gender || 'N/A'}</p>
+                        <p><span>ভোটার ID:</span> ${vId}</p>
+                        <p><span>নাম:</span> ${vName}</p>
+                        <p><span>পিতা:</span> ${vFather}</p>
+                        <p><span>মাতা:</span> ${vMother}</p>
+                        <p><span>গ্রাম/ঠিকানা:</span> ${vAddress}</p>
+                        <p><span>উপজেলা:</span> ${vUpazila}</p>
+                        <p><span>জেলা:</span> ${vDistrict}</p>
+                        <p><span>জন্ম তারিখ:</span> ${vDob}</p>
+                        <p><span>লিঙ্গ:</span> ${vGender}</p>
                     </div>`;
             });
         } catch (err) {
