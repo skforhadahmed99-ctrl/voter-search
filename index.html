@@ -12,32 +12,32 @@
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
         .col { flex: 1; display: flex; align-items: center; }
         select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fdfdfd; font-size: 14px; }
-        label { width: 80px; font-weight: bold; font-size: 14px; color: #333; }
+        label { width: 60px; font-weight: bold; font-size: 14px; color: #333; }
         .btn-container { display: flex; gap: 10px; margin-top: 15px; }
         button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; color: white; }
         .btn-search { background-color: #2e7d32; }
         .btn-clear { background-color: #c62828; }
         .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; margin-top: 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
-        .results { margin-top: 20px; }
-        .no-data { text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 16px; font-weight: 500; }
+        .results { margin-top: 15px; }
+        .no-data { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 16px; font-weight: 500; }
+        .voter-card { background: #fff; border: 1px solid #dfe4ea; border-left: 5px solid #1565c0; padding: 12px; margin-bottom: 10px; border-radius: 4px; text-align: left; }
+        .voter-card p { margin: 5px 0; font-size: 14px; }
+        .voter-card span { font-weight: bold; color: #555; }
         
-        /* 🛠️ আপনার স্ক্রিনশট অনুযায়ী প্রফেশনাল ভোটার কার্ড ডিজাইন */
-        .voter-box { background: #fff; border: 2px solid #c62828; border-radius: 8px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .voter-header { background-color: #1565c0; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; }
-        .voter-body { padding: 15px; background: #fff; }
-        .voter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .voter-field { font-size: 14px; color: #333; display: flex; align-items: center; }
-        .voter-field span.label { color: #7f8c8d; font-weight: normal; width: 75px; display: inline-block; }
-        .voter-field span.value { font-weight: bold; color: #111; }
-        .full-width-field { background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 14px; border: 1px solid #eef2f3; }
-        .full-width-field span.label { color: #7f8c8d; font-weight: normal; margin-right: 5px; }
-        .full-width-field span.value { font-weight: bold; color: #111; }
-        .voter-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #dfe4ea; font-size: 13px; }
-        .gender-tag { background-color: #1565c0; color: white; padding: 3px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .copy-btn { cursor: pointer; background: rgba(255,255,255,0.2); border: none; color: white; padding: 3px 8px; border-radius: 4px; font-size: 13px; font-weight: bold; }
-
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1565c0; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto 10px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* লোগিং স্পিনারের জন্য নতুন CSS */
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1565c0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -47,18 +47,29 @@
 <div class="container">
     <div class="row">
         <div class="col">
-            <select id="district" onchange="checkDistrictChange()">
-                <option value="All">সব জেলা (All)</option>
-                <option value="Chandpur" selected>চাঁদপুর (Chandpur)</option>
+            <select id="district">
+                <option value="All">সব বিভাগ (All)</option>
+                <option value="Dhaka">ঢাকা (Dhaka)</option>
+                <option value="Chittagong">চট্টগ্রাম (Chittagong)</option>
+                <option value="Rajshahi">রাজশাহী (Rajshahi)</option>
+                <option value="Khulna">খুলনা (Khulna)</option>
+                <option value="Barisal">বরিশাল (Barisal)</option>
+                <option value="Sylhet">সিলেট (Sylhet)</option>
+                <option value="Rangpur">রংপুর (Rangpur)</option>
+                <option value="Mymensingh">ময়মনসিংহ (Mymensingh)</option>
             </select>
         </div>
         <div class="col">
             <select id="upazila">
                 <option value="All">সব উপজেলা (All)</option>
-                <option value="ফریدগঞ্জ উপজেলা">ফریدগঞ্জ উপজেলা</option>
-                <option value="চাঁদপুর সদর">চাঁদপুর সদর</option>
-                <option value="কচুয়া">কচুয়া</option>
-                <option value="হাজীগঞ্জ">হাজীগঞ্জ</option>
+                <option value="Chandpur Sadar">চাঁদপুর সদর (Chandpur Sadar)</option>
+                <option value="Kachua">কচুয়া (Kachua)</option>
+                <option value="Faridganj">ফরিদগঞ্জ (Faridganj)</option>
+                <option value="Hajiganj">হাজীগঞ্জ (Hajiganj)</option>
+                <option value="Matlab Uttar">মতলব উত্তর (Matlab Uttar)</option>
+                <option value="Matlab Dakshin">মতলব দক্ষিণ (Matlab Dakshin)</option>
+                <option value="Haimchar">হাইমচর (Haimchar)</option>
+                <option value="Shahrasti">শাহরাস্তি (Shahrasti)</option>
             </select>
         </div>
     </div>
@@ -78,13 +89,13 @@
     </div>
     
     <div class="row">
-        <div class="col"><label>জন্ম তারিখ:</label><input type="text" id="dob" placeholder="০৩/০৫/১৯৭৩"></div>
+        <div class="col"><label>জম্ম তারিখ:</label><input type="text" id="dob" placeholder="১২/০৫/২০০০"></div>
         <div class="col">
             <label>লিঙ্গ:</label>
             <select id="gender">
                 <option value="All">All</option>
-                <option value="পুরুষ">পুরুষ</option>
-                <option value="মহিলা">মহিলা</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
             </select>
         </div>
     </div>
@@ -107,54 +118,28 @@
 <script>
     let db = null;
     
-    // 🟢 CORS এবং ক্যাশিং সমস্যা এড়াতে jsDelivr এর একদম সঠিক ডাইরেক্ট কমপ্রেসড লিঙ্ক
-    const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters1.db"; 
+    const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters.db"; 
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
-        const districtValue = document.getElementById('district').value;
-        
-        if (districtValue !== "Chandpur") {
-            statusText.innerText = "🟡 অনুগ্রহ করে 'চাঁদপুর' জেলা সিলেক্ট করুন।";
-            return;
-        }
-
         try {
-            statusText.innerText = "🔄 চাঁদপুর ডাটাবেজ ডাউনলোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।";
-            
-            // sql.js ইঞ্জিন লোড করা হচ্ছে
+            statusText.innerText = "🔄 গিটহাব থেকে ডাটাবেজ ডাউনলোড হচ্ছে... একটু অপেক্ষা করুন।";
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            // ক্যাশিং বাইপাস করার জন্য টাইমস্ট্যাম্প যুক্ত রিকোয়েস্ট পলিসি
-            const response = await fetch(githubDatabaseLink, { cache: "no-store" });
-            if(!response.ok) throw new Error("Fetch failed");
+            const response = await fetch(githubDatabaseLink);
+            if(!response.ok) throw new Error("Database fetch failed");
             
             const buf = await response.arrayBuffer();
             db = new SQL.Database(new Uint8Array(buf));
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
             console.error(e);
-            // ব্যাকআপ লিঙ্ক (Raw GitHub লিংক দিয়ে পুনরায় চেষ্টা করা হচ্ছে)
-            try {
-                const backupLink = "https://raw.githubusercontent.com/skforhadahmed99-ctrl/voters.db/main/voters1.db?t=" + new Date().getTime();
-                const response = await fetch(backupLink);
-                if(!response.ok) throw new Error();
-                const buf = await response.arrayBuffer();
-                db = new SQL.Database(new Uint8Array(buf));
-                statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে! (Backup)";
-            } catch(err) {
-                statusText.innerText = "🔴 ডাটাবেজ কানেকশন ব্যর্থ! গিটহাবে voters1.db ফাইলটি Public আছে কি না নিশ্চিত করুন।";
-            }
+            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। গিটহাব লিংক চেক করুন।";
         }
     }
 
-    function checkDistrictChange() {
-        db = null;
-        initDatabase();
-    }
-
     function clearFields() {
-        document.getElementById('district').value = 'Chandpur';
+        document.getElementById('district').value = 'All';
         document.getElementById('upazila').value = 'All';
         document.getElementById('voterId').value = '';
         document.getElementById('name').value = '';
@@ -172,10 +157,11 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড সম্পূর্ণ হয়নি বা সফলভাবে কানেক্ট হয়নি। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
+            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
             return;
         }
 
+        // 🟢 সার্চ বাটনে চাপ দিলে নিচের অংশে "Logging" ও "Loading Animation" শুরু হবে
         container.innerHTML = `
             <div class="no-data">
                 <div class="spinner"></div>
@@ -183,12 +169,13 @@
             </div>`;
         countText.innerText = '0';
 
+        // লোগিং ও রিয়েল-টাইম সার্চিং এর অনুভূতি দেওয়ার জন্য ১.৫ সেকেন্ডের ডিলে (Delay) লজিক
         setTimeout(() => {
-            executeSearch();
-        }, 1200);
+            executeActualSearch();
+        }, 1500);
     }
 
-    function executeSearch() {
+    function executeActualSearch() {
         const district = document.getElementById('district').value;
         const upazila = document.getElementById('upazila').value;
         const voterId = document.getElementById('voterId').value.trim();
@@ -206,26 +193,30 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
-            if(district !== 'All') { query += " AND district LIKE :district"; params[':district'] = `%${district}%`; }
-            if(upazila !== 'All') { query += " AND subdistrict = :upazila"; params[':upazila'] = upazila; }
-            if(voterId) { query += " AND (id = :voterId OR area_code = :voterId)"; params[':voterId'] = voterId; }
-            
-            // 🎯 আপনার রিকোয়েস্ট অনুযায়ী নিখুঁত নাম সার্চ লজিক (Exact Match)
-            if(name) { query += " AND name = :name"; params[':name'] = name; }
-            
-            if(father) { query += " AND father LIKE :father"; params[':father'] = `%${father}%`; }
-            if(mother) { query += " AND mother LIKE :mother"; params[':mother'] = `%${mother}%`; }
-            if(village) { query += " AND village LIKE :village"; params[':village'] = `%${village}%`; }
-            if(dob) { query += " AND dob = :dob"; params[':dob'] = dob; }
+            // যদি চট্টগ্রাম বা নির্দিষ্ট কোনো বিভাগ সিলেক্ট করা থাকে এবং চাঁদপুরের ফাইল লিংক করা থাকে
+            if(district !== 'All') { 
+                query += " AND (district LIKE :district OR district_name LIKE :district)"; 
+                params[':district'] = `%${district}%`; 
+            }
+            if(upazila !== 'All') { 
+                query += " AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila)"; 
+                params[':upazila'] = `%${upazila}%`; 
+            }
+            if(voterId) { query += " AND (voter_id = :voterId OR id = :voterId OR card_no = :voterId)"; params[':voterId'] = voterId; }
+            if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
+            if(father) { query += " AND (father_name LIKE :father OR father LIKE :father)"; params[':father'] = `%${father}%`; }
+            if(mother) { query += " AND (mother_name LIKE :mother OR mother LIKE :mother)"; params[':mother'] = `%${mother}%`; }
+            if(village) { query += " AND (address LIKE :village OR village LIKE :village OR address_details LIKE :village)"; params[':village'] = `%${village}%`; }
+            if(dob) { query += " AND (dob = :dob OR date_of_birth = :dob OR birth_date = :dob)"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
 
-            query += " LIMIT 50";
+            query += " LIMIT 500";
 
             const res = db.exec(query, params);
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
+                container.innerHTML = '<div class="no-data">🔍<br>অনুসন্ধান সম্পন্ন! কোনো তথ্য পাওয়া যায়নি</div>';
                 countText.innerText = '0';
                 return;
             }
@@ -234,54 +225,32 @@
             const rows = res[0].values;
             countText.innerText = rows.length;
 
-            let index = 1;
             rows.forEach(row => {
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
-                let vId = data.id || 'N/A';
+                let vId = data.voter_id || data.id || data.card_no || 'N/A';
+                let vUpazila = data.upazila || data.upazila_name || data.upazilla || 'N/A';
+                let vDob = data.dob || data.date_of_birth || data.birth_date || 'N/A';
+                
                 let vName = data.name || 'N/A';
-                let vFather = data.father || 'N/A';
-                let vMother = data.mother || 'N/A';
-                let vOccupation = data.occupation || 'N/A'; 
-                let vDob = data.dob || 'N/A';
-                let vWord = data.word_no || 'N/A';
-                let vPostCode = data.postcode || 'N/A';
-                let vPostOffice = data.post_office || 'N/A';
-                let vVillage = data.village || 'N/A';
-                let vSubdistrict = data.subdistrict || 'N/A';
-                let vDistrict = data.district || 'N/A';
-                let vAreaCode = data.area_code || 'N/A';
-                let vGender = data.gender || 'পুরুষ';
-
-                let serialNum = String(index++).padStart(3, '0');
+                let vFather = data.father_name || data.father || 'N/A';
+                let vMother = data.mother_name || data.mother || 'N/A';
+                let vAddress = data.address || data.village || data.address_details || 'N/A';
+                let vDistrict = data.district || data.district_name || 'N/A';
+                let vGender = data.gender || 'N/A';
 
                 container.innerHTML += `
-                    <div class="voter-box">
-                        <div class="voter-header">
-                            <div>${serialNum}. নাম: ${vName}</div>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('${vId}'); alert('ID Copied!');">ID: ${vId} 📋</button>
-                        </div>
-                        <div class="voter-body">
-                            <div class="voter-grid">
-                                <div class="voter-field"><span class="label">👤 পিতা:</span><span class="value">${vFather}</span></div>
-                                <div class="voter-field"><span class="label">👩 মাতা:</span><span class="value">${vMother}</span></div>
-                                <div class="voter-field"><span class="label">💼 পেশা:</span><span class="value">${vOccupation}</span></div>
-                                <div class="voter-field"><span class="label">🎂 জন্ম তারিখ:</span><span class="value">${vDob}</span></div>
-                            </div>
-                            <div class="voter-grid" style="border-top: 1px dashed #eee; padding-top: 8px;">
-                                <div class="voter-field"><span class="label">📍 ওয়ার্ড নং:</span><span class="value" style="color: green;">${vWord}</span></div>
-                                <div class="voter-field"><span class="label">📮 পোস্টকোড:</span><span class="value" style="color: orange;">${vPostCode}</span></div>
-                                <div class="voter-field"><span class="label">📦 ডাকঘর:</span><span class="value" style="color: navy;">${vPostOffice}</span></div>
-                            </div>
-                            <div class="full-width-field">
-                                <span class="label">🏠 ঠিকানা:</span><span class="value">${vVillage}, ${vSubdistrict}, ${vDistrict}</span>
-                            </div>
-                            <div class="voter-footer">
-                                <div>এরিয়া কোড: ${vAreaCode}</div>
-                                <div class="gender-tag">♂️ ${vGender}</div>
-                            </div>
-                        </div>
+                    <div class="voter-card">
+                        <p><span>ভোটার ID:</span> ${vId}</p>
+                        <p><span>নাম:</span> ${vName}</p>
+                        <p><span>পিতা:</span> ${vFather}</p>
+                        <p><span>মাতা:</span> ${vMother}</p>
+                        <p><span>গ্রাম/ঠিকানা:</span> ${vAddress}</p>
+                        <p><span>উপজেলা:</span> ${vUpazila}</p>
+                        <p><span>জেলা:</span> ${vDistrict}</p>
+                        <p><span>জন্ম তারিখ:</span> ${vDob}</p>
+                        <p><span>লিঙ্গ:</span> ${vGender}</p>
                     </div>`;
             });
         } catch (err) {
