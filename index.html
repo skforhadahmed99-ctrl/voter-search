@@ -21,7 +21,7 @@
         .results { margin-top: 20px; }
         .no-data { text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 16px; font-weight: 500; }
         
-        /* 🛠️ আপনার স্ক্রিনশট অনুযায়ী নতুন প্রফেশনাল ভোটার কার্ড ডিজাইন */
+        /* ভোটার কার্ড ডিজাইন */
         .voter-box { background: #fff; border: 2px solid #c62828; border-radius: 8px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .voter-header { background-color: #1565c0; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; }
         .voter-id-section { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px; font-size: 14px; }
@@ -49,7 +49,6 @@
     <div class="row">
         <div class="col">
             <select id="district">
-                <option value="All">সব জেলা (All)</option>
                 <option value="Chandpur" selected>চাঁদপুর (Chandpur)</option>
             </select>
         </div>
@@ -84,8 +83,8 @@
             <label>লিঙ্গ:</label>
             <select id="gender">
                 <option value="All">All</option>
-                <option value="পুরুষ">পুরুষ (Male)</option>
-                <option value="মহিলা">মহিলা (Female)</option>
+                <option value="পুরুষ">পুরুষ</option>
+                <option value="মহিলা">মহিলা</option>
             </select>
         </div>
     </div>
@@ -108,16 +107,18 @@
 <script>
     let db = null;
     
-    // আপনার জেনুইন voters1.db গিটহাব রিপোজিটরি লিংক
-    const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters1.db"; 
+    // বিকল্প সোর্স হিসেবে সরাসরি raw লিংক ব্যবহার করা হয়েছে ক্যাশিং সমস্যা এড়াতে
+    const githubDatabaseLink = "https://raw.githubusercontent.com/skforhadahmed99-ctrl/voters.db/main/voters1.db"; 
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
-            statusText.innerText = "🔄 গিটহাব থেকে চাঁদপুর ডাটাবেজ ডাউনলোড হচ্ছে...";
+            statusText.innerText = "🔄 ডাটাবেজ ফাইল ডাউনলোড হচ্ছে...";
+            
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
-            const response = await fetch(githubDatabaseLink);
+            // ক্যাশ এড়াতে টাইমস্ট্যাম্প যুক্ত করা হয়েছে
+            const response = await fetch(githubDatabaseLink + '?t=' + new Date().getTime());
             if(!response.ok) throw new Error("Database fetch failed");
             
             const buf = await response.arrayBuffer();
@@ -125,12 +126,21 @@
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
         } catch (e) {
             console.error(e);
-            statusText.innerText = "🔴 ডাটাবেজ কানেকশন ব্যর্থ। লিংক বা ইন্টারনেট চেক করুন।";
+            // যদি raw লিংকও সমস্যা করে, তবে jsDelivr ফালব্যাক লিংক চেষ্টা করবে
+            try {
+                const jsdelivrLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters1.db";
+                const response = await fetch(jsdelivrLink);
+                if(!response.ok) throw new Error();
+                const buf = await response.arrayBuffer();
+                db = new SQL.Database(new Uint8Array(buf));
+                statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে! (CDN)";
+            } catch(err) {
+                statusText.innerText = "🔴 ডাটাবেজ কানেকশন ব্যর্থ। লিংক বা ইন্টারনেট চেক করুন।";
+            }
         }
     }
 
     function clearFields() {
-        document.getElementById('district').value = 'Chandpur';
         document.getElementById('upazila').value = 'All';
         document.getElementById('voterId').value = '';
         document.getElementById('name').value = '';
@@ -148,11 +158,10 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ এখনো পুরোপুরি লোড হয়নি। অনুগ্রহ করে সামান্য অপেক্ষা করুন✅।");
+            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে বা কানেক্ট হয়নি। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
             return;
         }
 
-        // লোগিং স্ট্যাটাস সক্রিয় করা
         container.innerHTML = `
             <div class="no-data">
                 <div class="spinner"></div>
@@ -183,12 +192,11 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
-            // 🎯 আপনার ডাটাবেজের সঠিক কলাম স্ট্রাকচার অনুযায়ী সার্চ কোয়েরি ম্যাপিং
             if(district !== 'All') { query += " AND district LIKE :district"; params[':district'] = `%${district}%`; }
             if(upazila !== 'All') { query += " AND subdistrict = :upazila"; params[':upazila'] = upazila; }
             if(voterId) { query += " AND (id = :voterId OR area_code = :voterId)"; params[':voterId'] = voterId; }
             
-            // 🎯 নিখুঁত নাম সার্চ লজিক (যা খুঁজবে ঠিক সেটাই আসবে)
+            // নিখুঁত নাম সার্চ লজিক
             if(name) { query += " AND name = :name"; params[':name'] = name; }
             
             if(father) { query += " AND father LIKE :father"; params[':father'] = `%${father}%`; }
@@ -217,7 +225,6 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
-                // স্ক্রিনশটের কলাম ডাটা রিড করা
                 let vId = data.id || 'N/A';
                 let vName = data.name || 'N/A';
                 let vFather = data.father || 'N/A';
@@ -233,10 +240,8 @@
                 let vAreaCode = data.area_code || 'N/A';
                 let vGender = data.gender || 'পুরুষ';
 
-                // সিরিয়াল নম্বর ৩ ডিজিট ফরম্যাটে করা (যেমন: 001)
                 let serialNum = String(index++).padStart(3, '0');
 
-                // 🛠️ আপনার ছবি অনুযায়ী রেডিমেড কার্ড ইউআই টেমপ্লেট
                 container.innerHTML += `
                     <div class="voter-box">
                         <div class="voter-header">
