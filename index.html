@@ -209,7 +209,7 @@
             if(dob) { query += " AND (dob = :dob OR date_of_birth = :dob OR birth_date = :dob)"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND (gender = :gender OR sex = :gender)"; params[':gender'] = gender; }
 
-            query += " LIMIT 500";
+            query += " LIMIT 100";
 
             const res = db.exec(query, params);
             container.innerHTML = '';
