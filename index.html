@@ -209,7 +209,7 @@
             if(dob) { query += " AND (dob = :dob OR date_of_birth = :dob OR birth_date = :dob)"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND (gender = :gender OR sex = :gender)"; params[':gender'] = gender; }
 
-            query += " LIMIT 600";
+            query += " LIMIT 500";
 
             const res = db.exec(query, params);
             container.innerHTML = '';
@@ -230,7 +230,7 @@
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
                 // 🎯 সরাসরি voter_no কলাম রিড করার লজিক (যা ফুল নাম্বার দেখাবে)
-                let vId = data.voter_no || data.voter_id || data.card_no || data.nid || 'N/A';
+                let vId = voter_no || data.voter_id || data.card_no || data.nid || 'N/A';
 
                 let vName = data.name || 'N/A';
                 vName = vName.replace(/^(.*?)(নাম\s*:\s*)/i, ''); 
