@@ -230,7 +230,7 @@
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
                 // 🎯 সরাসরি voter_no কলাম রিড করার লজিক (যা ফুল নাম্বার দেখাবে)
-                let vId = voter_no || data.voter_id || data.card_no || data.nid || 'N/A';
+                let vId = data.voter_no || data.voter_id || data.card_no || data.nid || 'N/A';
 
                 let vName = data.name || 'N/A';
                 vName = vName.replace(/^(.*?)(নাম\s*:\s*)/i, ''); 
