@@ -19,10 +19,25 @@
         .btn-clear { background-color: #c62828; }
         .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; margin-top: 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
         .results { margin-top: 15px; }
-        .no-data { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 16px; }
+        .no-data { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 16px; font-weight: 500; }
         .voter-card { background: #fff; border: 1px solid #dfe4ea; border-left: 5px solid #1565c0; padding: 12px; margin-bottom: 10px; border-radius: 4px; text-align: left; }
         .voter-card p { margin: 5px 0; font-size: 14px; }
         .voter-card span { font-weight: bold; color: #555; }
+        
+        /* লোগিং স্পিনারের জন্য নতুন CSS */
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1565c0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -33,14 +48,28 @@
     <div class="row">
         <div class="col">
             <select id="district">
-                <option value="All">সব জেলা (All)</option>
-                <option value="Chandpur">Chandpur</option>
+                <option value="All">সব বিভাগ (All)</option>
+                <option value="Dhaka">ঢাকা (Dhaka)</option>
+                <option value="Chittagong">চট্টগ্রাম (Chittagong)</option>
+                <option value="Rajshahi">রাজশাহী (Rajshahi)</option>
+                <option value="Khulna">খুলনা (Khulna)</option>
+                <option value="Barisal">বরিশাল (Barisal)</option>
+                <option value="Sylhet">সিলেট (Sylhet)</option>
+                <option value="Rangpur">রংপুর (Rangpur)</option>
+                <option value="Mymensingh">ময়মনসিংহ (Mymensingh)</option>
             </select>
         </div>
         <div class="col">
             <select id="upazila">
                 <option value="All">সব উপজেলা (All)</option>
-                <option value="Chandpur Sadar">Chandpur Sadar</option>
+                <option value="Chandpur Sadar">চাঁদপুর সদর (Chandpur Sadar)</option>
+                <option value="Kachua">কচুয়া (Kachua)</option>
+                <option value="Faridganj">ফরিদগঞ্জ (Faridganj)</option>
+                <option value="Hajiganj">হাজীগঞ্জ (Hajiganj)</option>
+                <option value="Matlab Uttar">মতলব উত্তর (Matlab Uttar)</option>
+                <option value="Matlab Dakshin">মতলব দক্ষিণ (Matlab Dakshin)</option>
+                <option value="Haimchar">হাইমচর (Haimchar)</option>
+                <option value="Shahrasti">শাহরাস্তি (Shahrasti)</option>
             </select>
         </div>
     </div>
@@ -124,6 +153,29 @@
     }
 
     function searchData() {
+        const container = document.getElementById('resultsContainer');
+        const countText = document.getElementById('countText');
+
+        if (!db) {
+            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
+            return;
+        }
+
+        // 🟢 সার্চ বাটনে চাপ দিলে নিচের অংশে "Logging" ও "Loading Animation" শুরু হবে
+        container.innerHTML = `
+            <div class="no-data">
+                <div class="spinner"></div>
+                <div>ডাটাবেজে অনুসন্ধান করা হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।</div>
+            </div>`;
+        countText.innerText = '0';
+
+        // লোগিং ও রিয়েল-টাইম সার্চিং এর অনুভূতি দেওয়ার জন্য ১.৫ সেকেন্ডের ডিলে (Delay) লজিক
+        setTimeout(() => {
+            executeActualSearch();
+        }, 1500);
+    }
+
+    function executeActualSearch() {
         const district = document.getElementById('district').value;
         const upazila = document.getElementById('upazila').value;
         const voterId = document.getElementById('voterId').value.trim();
@@ -137,18 +189,19 @@
         const container = document.getElementById('resultsContainer');
         const countText = document.getElementById('countText');
 
-        if (!db) {
-            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
-            return;
-        }
-
         try {
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
-            // কলামের নাম ভিন্ন হলেও সার্চ যেন কাজ করে তার জন্য OR ব্যবহার করা হয়েছে
-            if(district !== 'All') { query += " AND (district LIKE :district OR district_name LIKE :district)"; params[':district'] = `%${district}%`; }
-            if(upazila !== 'All') { query += " AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila)"; params[':upazila'] = `%${upazila}%`; }
+            // যদি চট্টগ্রাম বা নির্দিষ্ট কোনো বিভাগ সিলেক্ট করা থাকে এবং চাঁদপুরের ফাইল লিংক করা থাকে
+            if(district !== 'All') { 
+                query += " AND (district LIKE :district OR district_name LIKE :district)"; 
+                params[':district'] = `%${district}%`; 
+            }
+            if(upazila !== 'All') { 
+                query += " AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila)"; 
+                params[':upazila'] = `%${upazila}%`; 
+            }
             if(voterId) { query += " AND (voter_id = :voterId OR id = :voterId OR card_no = :voterId)"; params[':voterId'] = voterId; }
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
             if(father) { query += " AND (father_name LIKE :father OR father LIKE :father)"; params[':father'] = `%${father}%`; }
@@ -157,13 +210,13 @@
             if(dob) { query += " AND (dob = :dob OR date_of_birth = :dob OR birth_date = :dob)"; params[':dob'] = dob; }
             if(gender !== 'All') { query += " AND gender = :gender"; params[':gender'] = gender; }
 
-            query += " LIMIT 5000";
+            query += " LIMIT 500";
 
             const res = db.exec(query, params);
             container.innerHTML = '';
 
             if (res.length === 0 || res[0].values.length === 0) {
-                container.innerHTML = '<div class="no-data">🔍<br>কোনো তথ্য পাওয়া যায়নি</div>';
+                container.innerHTML = '<div class="no-data">🔍<br>অনুসন্ধান সম্পন্ন! কোনো তথ্য পাওয়া যায়নি</div>';
                 countText.innerText = '0';
                 return;
             }
@@ -176,7 +229,6 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
-                // 🛠️ ডাটাবেজে ভিন্ন ভিন্ন নামে কলাম থাকলে তা খুঁজে বের করার লজিক (Fallback Mechanism)
                 let vId = data.voter_id || data.id || data.card_no || 'N/A';
                 let vUpazila = data.upazila || data.upazila_name || data.upazilla || 'N/A';
                 let vDob = data.dob || data.date_of_birth || data.birth_date || 'N/A';
