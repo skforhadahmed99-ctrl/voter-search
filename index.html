@@ -146,7 +146,7 @@
         "Chandpur": [
             { value: "All", text: "সব উপজেলা (All)" },
             { value: "Faridganj", text: "ফریدগঞ্জ (Faridganj)" },
-            { value: "Kachua", text: "কচুয়া (Kachua)" }, // নতুন কচুয়ার ডাটা এখানে ইন্টিগ্রেট হবে
+            { value: "Kachua", text: "কচুয়া (Kachua)" },
             { value: "Chandpur Sadar", text: "চাঁদপুর সদর (Chandpur Sadar)" },
             { value: "Hajiganj", text: "হাজীগঞ্জ (Hajiganj)" },
             { value: "Matlab Uttar", text: "মতলব উত্তর (Matlab Uttar)" },
@@ -169,6 +169,27 @@
         "All": [
             { value: "All", text: "সব উপজেলা (All)" }
         ]
+    };
+
+    // বাংলা-ইংরেজি রূপান্তরের জন্য ম্যাপ স্কিমা (সার্চের সুবিধার্থে)
+    const banglaTranslation = {
+        "Chandpur": "চাঁদপুর",
+        "Dhaka": "ঢাকা",
+        "Chittagong": "চট্টগ্রাম",
+        "Faridganj": "ফریدগঞ্জ",
+        "Kachua": "কচুয়া",
+        "Chandpur Sadar": "চাঁদপুর সদর",
+        "Hajiganj": "হাজীগঞ্জ",
+        "Matlab Uttar": "মতলব উত্তর",
+        "Matlab Dakshin": "মতলব দক্ষিণ",
+        "Haimchar": "হাইমচর",
+        "Shahrasti": "শাহরাস্তি",
+        "Dhamrai": "ধামরাই",
+        "Savar": "সাভার",
+        "Keraniganj": "কেরানীগঞ্জ",
+        "Hathazari": "হাটহাজারী",
+        "Patiya": "পটিয়া",
+        "Raozan": "রাউজান"
     };
 
     function updateUpazilaOptions() {
@@ -198,7 +219,7 @@
             db = new SQL.Database(new Uint8Array(buf));
             statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
             
-            // ডাটাবেজ লোড হওয়ার পর লাইভ ডাটা কাউন্ট ক্যালকুলেট করা
+            // লাইভ ডাটা কাউন্ট ক্যালকুলেট করা
             calculateStatistics();
         } catch (e) {
             console.error(e);
@@ -211,29 +232,42 @@
         const statsList = document.getElementById('statsList');
         statsList.innerHTML = '';
         
-        const districtsToCount = ['Chandpur', 'Dhaka', 'Chittagong'];
         let grandTotal = 0;
+        
+        // সম্পূর্ণ টেবিল থেকে মূল সর্বমোট ডাটা নিয়ে আসা
+        try {
+            let resGrand = db.exec("SELECT COUNT(*) as count FROM voters");
+            if (resGrand.length > 0 && resGrand[0].values.length > 0) {
+                grandTotal = resGrand[0].values[0][0];
+            }
+        } catch (error) {
+            console.error("Error fetching grand total from DB", error);
+        }
+
+        const districtsToCount = [
+            { eng: 'Chandpur', bng: 'চাঁদপুর' },
+            { eng: 'Dhaka', bng: 'ঢাকা' },
+            { eng: 'Chittagong', bng: 'চট্টগ্রাম' }
+        ];
 
         districtsToCount.forEach(dist => {
             try {
-                let query = "SELECT COUNT(*) as count FROM voters WHERE district LIKE :dist OR district_name LIKE :dist";
-                let res = db.exec(query, { ':dist': `%${dist}%` });
+                // বাংলা এবং ইংরেজি উভয় বানানের সার্চ কাউন্ট নিশ্চিত করা
+                let query = "SELECT COUNT(*) as count FROM voters WHERE district LIKE :eng OR district_name LIKE :eng OR district LIKE :bng OR district_name LIKE :bng";
+                let res = db.exec(query, { ':eng': `%${dist.eng}%`, ':bng': `%${dist.bng}%` });
                 let count = (res.length > 0 && res[0].values.length > 0) ? res[0].values[0][0] : 0;
-                grandTotal += count;
-
-                let banglaName = dist === 'Chandpur' ? 'চাঁদপুর' : dist === 'Dhaka' ? 'ঢাকা' : 'চট্টগ্রাম';
 
                 statsList.innerHTML += `
                     <li class="stats-item">
-                        <span>📍 ${banglaName} (${dist})</span>
+                        <span>📍 ${dist.bng} (${dist.eng})</span>
                         <span class="stats-count">${count.toLocaleString()} টি</span>
                     </li>`;
             } catch (error) {
-                console.error("Error generating stats for " + dist, error);
+                console.error("Error generating stats for " + dist.eng, error);
             }
         });
 
-        // সর্বমোট ডাটা রো দেখানোর জন্য
+        // প্রকৃত সর্বমোট ডাটা নিচে দেখানো হচ্ছে
         statsList.innerHTML += `
             <li class="stats-item" style="border-top: 2px solid #1565c0; margin-top: 5px; padding-top: 8px; color: #2e7d32;">
                 <span>🔥 সর্বমোট ডাটা (Total)</span>
@@ -276,7 +310,7 @@
         }, 800);
     }
 
-    function executeActualSearch() {
+        function executeActualSearch() {
         const district = document.getElementById('district').value;
         const upazila = document.getElementById('upazila').value;
         const voterId = document.getElementById('voterId').value.trim();
@@ -294,14 +328,33 @@
             let query = "SELECT * FROM voters WHERE 1=1";
             let params = {};
 
+            // জেলা ফিল্টারিং (বাংলা ও ইংরেজি দুই রূপেই খুঁজবে)
             if(district !== 'All') { 
-                query += " AND (district LIKE :district OR district_name LIKE :district)"; 
+                const bdDistrict = banglaTranslation[district] || '';
+                query += " AND (district LIKE :district OR district_name LIKE :district OR district LIKE :bdDistrict OR district_name LIKE :bdDistrict)"; 
                 params[':district'] = `%${district}%`; 
+                params[':bdDistrict'] = `%${bdDistrict}%`; 
             }
+            
+            // উপজেলা ফিল্টারিং (বাংলা ও ইংরেজি দুই রূপেই খুঁজবে)
             if(upazila !== 'All') { 
-                query += " AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila OR subdistrict LIKE :upazila)"; 
+                const bdUpazila = banglaTranslation[upazila] || '';
+                
+                // কচুয়া এবং পটিয়া বানানের ক্ষেত্রে ব্রাউজার ও ডেটাবেজের ইউনিকোড অক্ষর জটিলতা এড়াতে অল্টারনেটিভ বানান যুক্ত করা
+                let extraCondition = "";
+                if (upazila === "Kachua") {
+                    extraCondition = " OR upazila LIKE :bdUpazilaAlt OR upazila_name LIKE :bdUpazilaAlt OR upazilla LIKE :bdUpazilaAlt OR subdistrict LIKE :bdUpazilaAlt";
+                    params[':bdUpazilaAlt'] = `%কচুয়া%`; 
+                } else if (upazila === "Patiya") {
+                    extraCondition = " OR upazila LIKE :bdUpazilaAlt OR upazila_name LIKE :bdUpazilaAlt OR upazilla LIKE :bdUpazilaAlt OR subdistrict LIKE :bdUpazilaAlt";
+                    params[':bdUpazilaAlt'] = `%পটিয়া%`;
+                }
+
+                query += ` AND (upazila LIKE :upazila OR upazila_name LIKE :upazila OR upazilla LIKE :upazila OR subdistrict LIKE :upazila OR upazila LIKE :bdUpazila OR upazila_name LIKE :bdUpazila OR upazilla LIKE :bdUpazila OR subdistrict LIKE :bdUpazila ${extraCondition})`; 
                 params[':upazila'] = `%${upazila}%`; 
+                params[':bdUpazila'] = `%${bdUpazila}%`; 
             }
+            
             if(voterId) { query += " AND (voter_no = :voterId OR voter_id = :voterId OR id = :voterId OR card_no = :voterId)"; params[':voterId'] = voterId; }
             if(name) { query += " AND name LIKE :name"; params[':name'] = `%${name}%`; }
             if(father) { query += " AND (father_name LIKE :father OR father LIKE :father)"; params[':father'] = `%${father}%`; }
@@ -347,7 +400,6 @@
                 let vSubdistrict = data.upazila || data.upazila_name || data.subdistrict || 'N/A';
                 let vDistrict = data.district || data.district_name || 'N/A';
                 
-                let vAreaCode = data.area_code || data.code || '131428';
                 let vGender = data.gender || data.sex || 'Male';
 
                 let serialNum = String(index++).padStart(3, '0');
@@ -365,4 +417,35 @@
                                 <div class="voter-field"><span class="label">👤   পিতা:</span><span class="value">${vFather}</span></div>
                                 <div class="voter-field"><span class="label">👤   মাতা:</span><span class="value">${vMother}</span></div>
                                 <div class="voter-field"><span class="label">💼   পেশা:</span><span class="value">${vOccupation}</span></div>
-                                <div class="voter-field"><span class="label">📅   জন্ম তারিখ:</span><span class="val
+                                <div class="voter-field"><span class="label">📅   জন্ম তারিখ:</span><span class="value">${vDob}</span></div>
+                            </div>
+                            
+                            <div class="voter-meta-grid">
+                                <div class="meta-field"><span class="label">📍 ওয়ার্ড:</span><span class="value">${vWord}</span></div>
+                                <div class="meta-field"><span class="label">📮 পোস্ট কোড:</span><span class="value">${vPostCode}</span></div>
+                                <div class="meta-field"><span class="label">🏤 পোস্ট অফিস:</span><span class="value">${vPostOffice}</span></div>
+                                <div class="meta-field"><span class="label">🌍 গ্রাম:</span><span class="value">${vVillage}</span></div>
+                            </div>
+                            
+                            <div class="voter-footer">
+                                <div>${genderTag}</div>
+                                <div>${vSubdistrict}, ${vDistrict}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<div class="no-data">🔴 অনুসন্ধানের সময় কোনো সমস্যা হয়েছে। ডাটাবেজ টেবিল স্কিমা চেক করুন।</div>';
+        }
+    }
+
+    // পেজ লোড হওয়ার সাথে সাথে অ্যাকশন চালু করার জন্য
+    window.onload = () => {
+        updateUpazilaOptions();
+        initDatabase();
+    };
+</script>
+
+</body>
+</html>
