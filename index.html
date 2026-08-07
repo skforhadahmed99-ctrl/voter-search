@@ -1,77 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Easy Data Search System - Upgraded</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background-color: #f5f6fa; }
-        .header { background-color: #1565c0; color: white; padding: 15px; font-size: 20px; font-weight: bold; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 10px; background-color: #f5f6fa; }
+        .header { background-color: #1565c0; color: white; padding: 12px 15px; font-size: 18px; font-weight: bold; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         
-        /* Layout Grid for Statistics and Main Search */
-        .main-layout { display: flex; flex-direction: row-reverse; gap: 15px; max-width: 1000px; margin: 10px auto; align-items: flex-start; }
+        /* Layout Grid */
+        .main-layout { display: flex; flex-direction: column; gap: 10px; max-width: 700px; margin: 10px auto; }
         
-        .stats-panel { flex: 1; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); border-top: 4px solid #1565c0; position: sticky; top: 10px; }
-        .stats-title { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #1565c0; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        /* Collapsible Stats Panel */
+        .stats-panel { background: white; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-top: 3px solid #1565c0; overflow: hidden; }
+        .stats-header { padding: 10px 15px; font-weight: bold; font-size: 14px; color: #1565c0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; user-select: none; }
+        .stats-header:hover { background-color: #f8fafc; }
+        .arrow-icon { transition: transform 0.3s ease; font-size: 12px; }
+        .arrow-icon.open { transform: rotate(180deg); }
+        .stats-content { display: none; padding: 10px 15px; border-top: 1px solid #eee; background: #fafafa; }
+        .stats-content.show { display: block; }
         .stats-list { list-style: none; padding: 0; margin: 0; }
-        .stats-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed #eee; font-weight: bold; }
-        .stats-count { background: #e3f2fd; color: #0d47a1; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .stats-item { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px dashed #eee; font-weight: bold; }
+        .stats-count { background: #e3f2fd; color: #0d47a1; padding: 2px 6px; border-radius: 10px; font-size: 11px; }
 
-        .container { flex: 2; max-width: 650px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin: 0; }
+        .container { background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        /* Compact Form Controls */
+        .row { display: flex; gap: 8px; margin-bottom: 6px; }
         .col { flex: 1; display: flex; align-items: center; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fdfdfd; font-size: 14px; }
-        label { width: 80px; font-weight: bold; font-size: 14px; color: #333; }
-        .btn-container { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; color: white; }
+        select, input { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: #fdfdfd; font-size: 12px; height: 32px; }
+        label { width: 65px; font-weight: bold; font-size: 12px; color: #333; flex-shrink: 0; }
+        
+        /* Compact Buttons */
+        .btn-container { display: flex; gap: 8px; margin-top: 10px; }
+        button { flex: 1; padding: 8px; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; color: white; height: 34px; }
         .btn-search { background-color: #2e7d32; }
         .btn-clear { background-color: #c62828; }
-        .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; margin-top: 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; }
-        .results { margin-top: 15px; }
-        .no-data { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 16px; font-weight: 500; }
+        button:hover { opacity: 0.9; }
+
+        .status-bar { background-color: #e3f2fd; color: #0d47a1; padding: 8px 10px; border-radius: 4px; margin-top: 10px; display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; }
+        .results { margin-top: 12px; }
+        .no-data { text-align: center; margin: 30px 0; color: #7f8c8d; font-size: 14px; font-weight: 500; }
         
-        .voter-box { background: #fff; border: 2px solid #c62828; border-radius: 8px; overflow: hidden; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: left; }
-        .voter-header { background-color: #1565c0; color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; }
+        /* Voter Card Styling */
+        .voter-box { background: #fff; border: 1.5px solid #dcdde1; border-radius: 6px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left; }
+        .voter-header { background-color: #1565c0; color: white; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; }
         
-        /* Voter Card Body layout */
-        .voter-body { padding: 15px; background: #fff; display: flex; gap: 15px; align-items: stretch; }
+        .voter-body { padding: 10px 12px; background: #fff; display: flex; gap: 10px; align-items: stretch; position: relative; }
         .voter-info-section { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
         
-        .voter-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
-        .voter-field { font-size: 15px; color: #333; display: flex; align-items: center; }
-        .voter-field span.label { color: #7f8c8d; width: 100px; display: inline-block; }
-        .voter-field span.value { font-weight: bold; color: #111; }
+        .voter-grid { display: grid; grid-template-columns: 1fr; gap: 5px; margin-bottom: 8px; }
+        .voter-field { font-size: 13px; color: #333; display: flex; align-items: center; }
+        .voter-field span.label { color: #7f8c8d; width: 85px; display: inline-block; font-size: 12px; }
+        .voter-field span.value { font-weight: bold; color: #111; letter-spacing: 1px; }
+        .masked-value { color: #d63031 !important; font-weight: bold; letter-spacing: 2px; }
         
-        .voter-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
-        .meta-field { font-size: 14px; display: flex; align-items: center; }
-        .meta-field span.label { color: #7f8c8d; margin-right: 5px; }
+        .voter-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid #eee; padding-top: 8px; margin-top: 6px; }
+        .meta-field { font-size: 12px; display: flex; align-items: center; }
+        .meta-field span.label { color: #7f8c8d; margin-right: 4px; }
         .meta-field span.value { font-weight: bold; }
         
-        .voter-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #dfe4ea; font-size: 14px; color: #555; }
-        .gender-tag-male { background-color: #1565c0; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-        .gender-tag-female { background-color: #ec407a; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; }
-        .copy-btn { cursor: pointer; background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+        .voter-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #dfe4ea; font-size: 12px; color: #555; }
+        .gender-tag-male { background-color: #1565c0; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+        .gender-tag-female { background-color: #ec407a; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+        
+        .copy-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: not-allowed; }
 
-        /* QR Code Container layout */
-        .voter-qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; background: #f8fafc; min-width: 100px; text-align: center; flex-shrink: 0; }
-        .voter-qr-image { width: 90px; height: 90px; display: block; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; }
-        .voter-qr-label { font-size: 11px; color: #475569; font-weight: bold; margin-top: 6px; }
+        /* Locked QR Container */
+        .voter-qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #cbd5e1; padding: 6px; border-radius: 6px; background: #f8fafc; min-width: 80px; text-align: center; flex-shrink: 0; }
+        .voter-qr-locked { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 4px; font-size: 24px; color: #64748b; }
+        .voter-qr-label { font-size: 10px; color: #e17055; font-weight: bold; margin-top: 4px; }
 
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1565c0; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto 10px auto; }
+        /* Recharge Prompt Banner */
+        .recharge-banner { background: #fff3cd; color: #856404; border: 1px dashed #ffeeba; padding: 8px; text-align: center; font-weight: bold; border-radius: 4px; margin-top: 8px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #1565c0; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 15px auto 8px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .main-layout { flex-direction: column; }
-            .stats-panel { width: 100%; position: static; box-sizing: border-box; }
-            .container { width: 100%; box-sizing: border-box; }
-        }
-
         @media (max-width: 480px) {
-            .voter-body { flex-direction: column; align-items: center; gap: 15px; }
+            .voter-body { flex-direction: column; align-items: stretch; }
             .voter-qr-container { width: 100%; box-sizing: border-box; }
+            .row { flex-direction: column; gap: 4px; }
+            label { width: 100%; margin-bottom: 2px; }
         }
     </style>
 </head>
@@ -80,13 +91,20 @@
 <div class="header">Easy Data Search System</div>
 
 <div class="main-layout">
+    <!-- Collapsible District Statistics Section -->
     <div class="stats-panel">
-        <div class="stats-title">📊 জেলা ভিত্তিক মোট তথ্য সংখ্যা</div>
-        <ul class="stats-list" id="statsList">
-            <li class="stats-item" style="color: #7f8c8d;">ডাটাবেজ লোড হচ্ছে...</li>
-        </ul>
+        <div class="stats-header" onclick="toggleStats()">
+            <span>📊 জেলা ভিত্তিক মোট তথ্য সংখ্যা</span>
+            <span class="arrow-icon" id="arrowIcon">▼</span>
+        </div>
+        <div class="stats-content" id="statsContent">
+            <ul class="stats-list" id="statsList">
+                <li class="stats-item" style="color: #7f8c8d;">ডাটাবেজ লোড হচ্ছে...</li>
+            </ul>
+        </div>
     </div>
 
+    <!-- Compact Search Form Section -->
     <div class="container">
         <div class="row">
             <div class="col">
@@ -98,13 +116,12 @@
                 </select>
             </div>
             <div class="col">
-                <select id="upazila">
-                    </select>
+                <select id="upazila"></select>
             </div>
         </div>
 
         <div class="row">
-            <div class="col" style="flex: 1;"><label>ভোটার ID:</label><input type="text" id="voterId" placeholder="ভোটার আইডি লিখুন..."></div>
+            <div class="col"><label>ভোটার ID:</label><input type="text" id="voterId" placeholder="ভোটার আইডি..."></div>
         </div>
 
         <div class="row">
@@ -135,7 +152,7 @@
         </div>
 
         <div class="status-bar">
-            <span id="statusText">🔄 ক্লাউড ডাটাবেজ কানেক্ট করা হচ্ছে...</span>
+            <span id="statusText">🔄 ডাটাবেজ সংযুক্ত হচ্ছে...</span>
             <span>ফলাফল: <span id="countText">0</span> জন</span>
         </div>
 
@@ -147,12 +164,11 @@
 
 <script>
     let db = null;
-    let dbTableName = 'voters'; // ডিফল্ট টেবিল নেম
-    let dbColumns = []; // ডাটাবেজের প্রকৃত কলামের তালিকা সংরক্ষণের জন্য
+    let dbTableName = 'voters'; 
+    let dbColumns = []; 
     
     const githubDatabaseLink = "https://cdn.jsdelivr.net/gh/skforhadahmed99-ctrl/voters.db@main/voters.db"; 
 
-    // জেলা ও উপজেলা ম্যাপিং ডাটা
     const upazilaData = {
         "Chandpur": [
             { value: "All", text: "সব উপজেলা (All)" },
@@ -177,9 +193,7 @@
             { value: "Patiya", text: "পটিয়া (Patiya)" },
             { value: "Raozan", text: "রাউজান (Raozan)" }
         ],
-        "All": [
-            { value: "All", text: "সব উপজেলা (All)" }
-        ]
+        "All": [{ value: "All", text: "সব উপজেলা (All)" }]
     };
 
     const banglaTranslation = {
@@ -190,6 +204,13 @@
         "Savar": "সাভার", "Keraniganj": "কেরানীগঞ্জ", "Hathazari": "হাটহাজারী",
         "Patiya": "পটিয়া", "Raozan": "রাউজান"
     };
+
+    function toggleStats() {
+        const content = document.getElementById('statsContent');
+        const arrow = document.getElementById('arrowIcon');
+        content.classList.toggle('show');
+        arrow.classList.toggle('open');
+    }
 
     function updateUpazilaOptions() {
         const districtSelect = document.getElementById('district').value;
@@ -205,16 +226,15 @@
         });
     }
 
-    // কলামের অস্তিত্ব চেক করার জন্য হেল্পার ফাংশন
     function hasColumn(columnName) {
-        if (dbColumns.length === 0) return true; // স্কিমা রিড করতে না পারলে ডিফল্ট ট্রু দেওয়া হচ্ছে যেন সার্চ ব্যাহত না হয়
+        if (dbColumns.length === 0) return true;
         return dbColumns.includes(columnName.toLowerCase());
     }
 
     async function initDatabase() {
         const statusText = document.getElementById('statusText');
         try {
-            statusText.innerText = "🔄 গিটহাব থেকে ডাটাবেজ ডাউনলোড হচ্ছে... একটু অপেক্ষা করুন।";
+            statusText.innerText = "🔄 ডাটাবেজ ডাউনলোড হচ্ছে...";
             const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}` });
             
             const response = await fetch(githubDatabaseLink);
@@ -223,34 +243,28 @@
             const buf = await response.arrayBuffer();
             db = new SQL.Database(new Uint8Array(buf));
             
-            // ১. ডাটাবেজ থেকে স্বয়ংক্রিয়ভাবে প্রথম ইউজার টেবিলের নাম ডিটেক্ট করা
             try {
                 let resTables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
                 if (resTables.length > 0 && resTables[0].values.length > 0) {
                     dbTableName = resTables[0].values[0][0];
                 }
-            } catch (tableErr) {
-                console.error("Table name detection failed, falling back to 'voters'", tableErr);
-            }
+            } catch (tableErr) { console.error("Table detection failed", tableErr); }
 
-            // ২. ডিটেক্ট করা টেবিল থেকে ডাইনামিকভাবে কলামের নামসমূহ রিড করা
             try {
                 let resColumns = db.exec(`PRAGMA table_info(${dbTableName})`);
                 if (resColumns.length > 0 && resColumns[0].values.length > 0) {
                     dbColumns = resColumns[0].values.map(row => row[1].toLowerCase());
                 }
-            } catch (colErr) {
-                console.error("Columns schema detection failed", colErr);
-            }
+            } catch (colErr) { console.error("Column detection failed", colErr); }
 
-            statusText.innerText = "🟢 ডাটাবেজ অনলাইন সংযুক্ত হয়েছে!";
+            statusText.innerText = "🟢 ডাটাবেজ সংযুক্ত হয়েছে!";
             calculateStatistics();
         } catch (e) {
             console.error(e);
-            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না। গিটহাব লিংক চেক করুন।";
+            statusText.innerText = "🔴 ডাটাবেজ কানেকশন করা যাচ্ছে না।";
             document.getElementById('statsList').innerHTML = '<li class="stats-item" style="color:red;">ডাটাবেজ কানেকশন ইরর!</li>';
         }
-    }
+        }
 
     function calculateStatistics() {
         const statsList = document.getElementById('statsList');
@@ -263,9 +277,7 @@
             if (resGrand.length > 0 && resGrand[0].values.length > 0) {
                 grandTotal = resGrand[0].values[0][0];
             }
-        } catch (error) {
-            console.error("Error fetching grand total", error);
-        }
+        } catch (error) { console.error("Error total count", error); }
 
         const districtsToCount = [
             { eng: 'Chandpur', bng: 'চাঁদপুর' },
@@ -291,13 +303,11 @@
                         <span>📍 ${dist.bng} (${dist.eng})</span>
                         <span class="stats-count">${count.toLocaleString()} টি</span>
                     </li>`;
-            } catch (error) {
-                console.error("Error generating stats for " + dist.eng, error);
-            }
+            } catch (error) { console.error("Stats error " + dist.eng, error); }
         });
 
         statsList.innerHTML += `
-            <li class="stats-item" style="border-top: 2px solid #1565c0; margin-top: 5px; padding-top: 8px; color: #2e7d32;">
+            <li class="stats-item" style="border-top: 1px solid #1565c0; margin-top: 4px; padding-top: 6px; color: #2e7d32;">
                 <span>🔥 সর্বমোট ডাটা (Total)</span>
                 <span class="stats-count" style="background: #e8f5e9; color: #1b5e20;">${grandTotal.toLocaleString()} টি</span>
             </li>`;
@@ -322,20 +332,20 @@
         const countText = document.getElementById('countText');
 
         if (!db) {
-            alert("ডাটাবেজ ফাইলটি এখনো ডাউনলোড হচ্ছে। অনুগ্রহ করে একটু অপেক্ষা করুন✅।");
+            alert("ডাটাবেজ ফাইলটি এখনো লোড হচ্ছে। অপেক্ষা করুন✅।");
             return;
         }
 
         container.innerHTML = `
             <div class="no-data">
                 <div class="spinner"></div>
-                <div>ডাটাবেজে অনুসন্ধান করা হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।</div>
+                <div>ডাটাবেজে অনুসন্ধান করা হচ্ছে...</div>
             </div>`;
         countText.innerText = '0';
 
         setTimeout(() => {
             executeActualSearch();
-        }, 800);
+        }, 500);
     }
 
     function executeActualSearch() {
@@ -356,13 +366,11 @@
             let query = `SELECT * FROM ${dbTableName} WHERE 1=1`;
             let params = {};
 
-            // জেলা ফিল্টারিং (ডাটাবেজে জেলা সংক্রান্ত কলাম থাকলে কুয়েরি তৈরি হবে)
             if (district !== 'All') { 
                 const bdDistrict = banglaTranslation[district] || '';
                 let distConditions = [];
                 if (hasColumn('district')) distConditions.push("district LIKE :district OR district LIKE :bdDistrict");
                 if (hasColumn('district_name')) distConditions.push("district_name LIKE :district OR district_name LIKE :bdDistrict");
-                
                 if (distConditions.length > 0) {
                     query += " AND (" + distConditions.join(" OR ") + ")";
                     params[':district'] = `%${district}%`; 
@@ -370,7 +378,6 @@
                 }
             }
             
-            // উপজেলা ফিল্টারিং (ডাটাবেজে উপজেলা সংক্রান্ত কলাম থাকলে কুয়েরি তৈরি হবে)
             if (upazila !== 'All') { 
                 const bdUpazila = banglaTranslation[upazila] || '';
                 let upzConditions = [];
@@ -394,7 +401,6 @@
                 }
             }
             
-            // আইডি ফিল্টারিং
             if (voterId) { 
                 let idConditions = [];
                 let idCols = ['voter_no', 'voter_id', 'id', 'card_no', 'nid'];
@@ -407,13 +413,11 @@
                 }
             }
             
-            // নাম ফিল্টারিং
             if (name && hasColumn('name')) { 
                 query += " AND name LIKE :name"; 
                 params[':name'] = `%${name}%`; 
             }
             
-            // পিতা ফিল্টারিং
             if (father) { 
                 let fatConditions = [];
                 if (hasColumn('father_name')) fatConditions.push("father_name LIKE :father");
@@ -424,7 +428,6 @@
                 }
             }
             
-            // মাতা ফিল্টারিং
             if (mother) { 
                 let motConditions = [];
                 if (hasColumn('mother_name')) motConditions.push("mother_name LIKE :mother");
@@ -435,7 +438,6 @@
                 }
             }
             
-            // গ্রাম ফিল্টারিং
             if (village) { 
                 let vilConditions = [];
                 let vilCols = ['address', 'village', 'address_details'];
@@ -448,7 +450,6 @@
                 }
             }
             
-            // জন্ম তারিখ ফিল্টারিং
             if (dob) { 
                 let dobConditions = [];
                 let dobCols = ['dob', 'date_of_birth', 'birth_date'];
@@ -461,7 +462,6 @@
                 }
             }
             
-            // লিঙ্গ ফিল্টারিং
             if (gender !== 'All') { 
                 let genConditions = [];
                 if (hasColumn('gender')) genConditions.push("gender = :gender");
@@ -472,7 +472,7 @@
                 }
             }
 
-            query += " LIMIT 100";
+            query += " LIMIT 50";
 
             const res = db.exec(query, params);
             container.innerHTML = '';
@@ -492,51 +492,49 @@
                 let data = {};
                 columns.forEach((col, idx) => { data[col.toLowerCase()] = row[idx]; });
 
-                let vId = data.voter_no || data.voter_id || data.card_no || data.nid || 'N/A';
+                // নাম প্রকাশ থাকবে
                 let vName = data.name || 'N/A';
                 vName = vName.replace(/^(.*?)(নাম\s*:\s*)/i, ''); 
 
-                let vFather = (data.father_name || data.father || 'N/A').replace(/^(.*?)(পিতা\s*:\s*)/i, '');
-                let vMother = (data.mother_name || data.mother || 'N/A').replace(/^(.*?)(মাতা\s*:\s*)/i, '');
-                let vOccupation = data.occupation || data.pasha || 'N/A'; 
-                let vDob = data.dob || data.date_of_birth || data.birth_date || 'N/A';
+                // বাকি সকল তথ্য মাস্ক (Asterisks **) করা থাকবে
+                let maskedId = "**********";
+                let maskedFather = "****************";
+                let maskedMother = "****************";
+                let maskedOccupation = "********";
+                let maskedDob = "**/**/****";
+                let maskedWord = "**";
+                let maskedPostCode = "****";
+                let maskedPostOffice = "********";
+                let maskedVillage = "****************";
                 
-                let vWord = data.word_no || data.word || '০১';
-                let vPostCode = data.postcode || data.post_code || '৩৬৫0';
-                let vPostOffice = data.post_office || data.dakghor || 'N/A';
-                
-                let vVillage = data.village || data.address || data.address_details || 'N/A';
                 let vSubdistrict = data.upazila || data.upazila_name || data.subdistrict || 'N/A';
                 let vDistrict = data.district || data.district_name || 'N/A';
-                
                 let vGender = data.gender || data.sex || 'Male';
 
-                let serialNum = String(index++).padStart(3, '0');
+                let serialNum = String(index++).padStart(2, '0');
                 let isFemale = (vGender === 'Female' || vGender === 'মহিলা' || vGender.includes('মহিলা'));
-                let genderTag = isFemale ? '<div class="gender-tag-female">♀️   মহিলা</div>' : '<div class="gender-tag-male">♂️   পুরুষ</div>';
-
-                let qrText = `ভোটার আইডি: ${vId}\nনাম: ${vName}\nপিতা: ${vFather}\nমাতা: ${vMother}\nজন্ম তারিখ: ${vDob}\nঠিকানা: ${vVillage}, ${vSubdistrict}, ${vDistrict}`;
+                let genderTag = isFemale ? '<div class="gender-tag-female">♀️ মহিলা</div>' : '<div class="gender-tag-male">♂️ পুরুষ</div>';
 
                 container.innerHTML += `
                     <div class="voter-box">
                         <div class="voter-header">
                             <div>${serialNum}. নাম: ${vName}</div>
-                            <button class="copy-btn" onclick="navigator.clipboard.writeText('${vId}'); alert('ID Copied!');">ID: ${vId} 📋</button>
+                            <button class="copy-btn" title="লক করা">ID: ${maskedId}</button>
                         </div>
                         <div class="voter-body">
                             <div class="voter-info-section">
                                 <div class="voter-grid">
-                                    <div class="voter-field"><span class="label">👤   পিতা:</span><span class="value">${vFather}</span></div>
-                                    <div class="voter-field"><span class="label">👤   মাতা:</span><span class="value">${vMother}</span></div>
-                                    <div class="voter-field"><span class="label">💼   পেশা:</span><span class="value">${vOccupation}</span></div>
-                                    <div class="voter-field"><span class="label">📅   জন্ম তারিখ:</span><span class="value">${vDob}</span></div>
+                                    <div class="voter-field"><span class="label">👤 পিতা:</span><span class="value masked-value">${maskedFather}</span></div>
+                                    <div class="voter-field"><span class="label">👤 মাতা:</span><span class="value masked-value">${maskedMother}</span></div>
+                                    <div class="voter-field"><span class="label">💼 পেশা:</span><span class="value masked-value">${maskedOccupation}</span></div>
+                                    <div class="voter-field"><span class="label">📅 জন্ম তারিখ:</span><span class="value masked-value">${maskedDob}</span></div>
                                 </div>
                                 
                                 <div class="voter-meta-grid">
-                                    <div class="meta-field"><span class="label">📍 ওয়ার্ড:</span><span class="value">${vWord}</span></div>
-                                    <div class="meta-field"><span class="label">📮 পোস্ট কোড:</span><span class="value">${vPostCode}</span></div>
-                                    <div class="meta-field"><span class="label">🏤 পোস্ট অফিস:</span><span class="value">${vPostOffice}</span></div>
-                                    <div class="meta-field"><span class="label">🌍 গ্রাম:</span><span class="value">${vVillage}</span></div>
+                                    <div class="meta-field"><span class="label">📍 ওয়ার্ড:</span><span class="value masked-value">${maskedWord}</span></div>
+                                    <div class="meta-field"><span class="label">📮 পোস্ট কোড:</span><span class="value masked-value">${maskedPostCode}</span></div>
+                                    <div class="meta-field"><span class="label">🏤 পোস্ট অফিস:</span><span class="value masked-value">${maskedPostOffice}</span></div>
+                                    <div class="meta-field"><span class="label">🌍 গ্রাম:</span><span class="value masked-value">${maskedVillage}</span></div>
                                 </div>
                                 
                                 <div class="voter-footer">
@@ -544,16 +542,22 @@
                                     <div>${vSubdistrict}, ${vDistrict}</div>
                                 </div>
                             </div>
+
                             <div class="voter-qr-container">
-                                <img class="voter-qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrText)}" alt="QR Code" />
-                                <div class="voter-qr-label">স্ক্যান করুন</div>
+                                <div class="voter-qr-locked">🔒</div>
+                                <div class="voter-qr-label">তথ্য লক করা</div>
                             </div>
+                        </div>
+
+                        <!-- রিচার্জ নোটিশ -->
+                        <div class="recharge-banner">
+                            🔒 সম্পূর্ণ তথ্য দেখার জন্য টাকা রিচার্জ করুন
                         </div>
                     </div>`;
             });
         } catch (error) {
             console.error(error);
-            container.innerHTML = '<div class="no-data">🔴 অনুসন্ধানের সময় কোনো সমস্যা হয়েছে। ডাটাবেজ টেবিল স্কিমা চেক করুন।</div>';
+            container.innerHTML = '<div class="no-data">🔴 অনুসন্ধানের সময় কোনো সমস্যা হয়েছে।</div>';
         }
     }
 
